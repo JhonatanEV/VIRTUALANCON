@@ -1,0 +1,29 @@
+table.dataTable tr.dtrg-group td {
+	background-color: #2594bf;
+	color: #fff;
+	/* -webkit-box-shadow: 0px 2px 4px rgba(37, 37, 37, 0.25);
+    box-shadow: 0px 2px 4px rgba(37, 37, 37, 0.25); */
+	white-space: break-spaces;
+}
+
+table.dataTable tr.dtrg-group.dtrg-level-0 td {
+	font-weight: bold
+}
+
+table.dataTable tr.dtrg-group.dtrg-level-1 td,
+table.dataTable tr.dtrg-group.dtrg-level-2 td {
+	background-color: #2594bf;
+	padding-top: 0.25em;
+	padding-bottom: 0.25em;
+	padding-left: 2em;
+	font-size: 0.9em;
+	font-weight: bold;
+	white-space: break-spaces;
+}
+
+table.dataTable tr.dtrg-group.dtrg-level-2 td {
+	background-color: #f3f3f3
+}
+
+table.dataTable.dtr-inline.collapsed>tbody>tr:not(.group)>td:first-child:before,table.dataTable.dtr-inline.collapsed>tbody>tr:not(.group)>th:first-child:before{}
+table.dataTable.dtr-inline.collapsed.compact>tbody>tr:not(.group)>td:first-child:before,table.dataTable.dtr-inline.collapsed.compact>tbody>tr:not(.group)>th:first-child:before{}
