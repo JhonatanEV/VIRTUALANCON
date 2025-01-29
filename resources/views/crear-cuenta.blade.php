@@ -36,8 +36,11 @@
                                         <div class="col-lg-8">
                                             <div class="text-center p-3">
                                                 <h4 class="mt-3 mb-1 fw-bold font-18">Crear nueva cuenta</h4>   
-                                                <p class="text-primary  mb-0">
-                                                    Si usted no tiene actualizado sus datos, debe comunicarse con la municipalidad de Ancón. El registro es solo para contribuyentes que tienen actualizado sus datos como el N° Documento.
+                                                <p class="alert-info p-2 mb-0">
+                                                ¡CHAT RENTAS! 🔔
+                                                ¡Atención vecinos! Si necesitas información sobre tus arbitrios, cuponeras o estado de cuenta, estamos aquí para ayudarte. 💼
+                                                📲 Escríbenos al WhatsApp: 
+                                                <a href="https://wa.me/51912462751" target="_blank" class="text-primary">912462751</a> y recibe toda la información que necesitas de forma rápida y sencilla. ¡Estamos para servirte!
                                                 </p>  
                                             </div>
                                         </div>
@@ -102,8 +105,8 @@
                                             </div>
                                             <span id="smserror" class="mb-0"></span>
                                         </div>
-                                        <hr>
-                                        <div class="row rounded-3 p-3">
+                                        <hr class="mb-1">
+                                        <div class="row rounded-3">
                                             <div class="col-md-6 align-self-xl-center">
                                                     <label for="numdoc" class="fw-bold">Codigo del Contribuyente</label>
                                                     <div class="input-group">
