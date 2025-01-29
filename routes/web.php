@@ -20,9 +20,7 @@ use App\Http\Controllers\Contribuyente\ContribuyenteController;
 use App\Http\Controllers\Seguridad\PerfilController;
 
 #Route::get('/', [InicioController::class, 'index'])->name('inicio');
-Route::get('/', function () {
-    return redirect()->route('login');
-})->name('inicio');
+Route::get('inicio', [InicioController::class, 'redirectToInicio'])->name('inicio');
 
 // Rutas de autenticación
 Route::prefix('login')->group(function () {
