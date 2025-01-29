@@ -16,7 +16,7 @@ return [
     'MUNICIPALIDAD' => 'Municipalidad de Ancón',
     'AUTOR' => 'J.J. ESPINOZA VALERA',
     'name' => env('APP_NAME', 'Laravel'),
-
+    'charset' => 'UTF-8',
     /*
     |--------------------------------------------------------------------------
     | Application Environment

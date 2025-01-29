@@ -2,27 +2,7 @@ $(document).ready(function(){
     
 });
 
-$("#frmCuenta").submit(function(e) {
-    e.preventDefault();
-    var parametros = $(this).serialize();
-    var data = new FormData(this);
 
-    envioAjaxdata("guardar-cuenta",data,function(res){
-        if(res.status){
-            showMessageAlert("Mensaje",res.mensaje,res.accion);
-            setTimeout(function(){
-                window.location.href = 'login';
-            }, 2000);
-
-        }else{
-
-            showMessageAlert("Mensaje",res.mensaje,res.accion);
-        }
-
-        
-        $("#frmCuenta")[0].reset();
-    });
-});
 $("#pers_tipodoc").change(function(){
     var tipo_doc = $("#pers_tipodoc").val();
     $("#btn-validar-doc").show();
@@ -88,6 +68,8 @@ function validadatos(){
     }
 });
 
+let valida_documento = false;
+let vlaida_codigo = false;
 
 $("#btn-validar-doc").click(function(){
     let TIPO  = getValue("pers_tipodoc");
@@ -108,16 +90,27 @@ $("#btn-validar-doc").click(function(){
                     setValue('pers_nombre',res.nombre);
                     setValue('pers_direccion',res.direccion);
 
-                    //$("#SOLI_DOCUMENTO").addClass('disabled');
+                    $("#pers_documento").attr("readonly",true);
                     $("#pers_nombre").attr("readonly",true);
                     $("#pers_direccion").attr("readonly",true);
                     $(".floating-text").show();
+
+                    valida_documento = true;
                 }else{
+                    $("#pers_documento").val('');
                     $("#pers_nombre").attr("readonly",false);
                     $("#pers_direccion").attr("readonly",false);
+
+                    showMessageAlert("Mensaje","No se encontro datos del contribuyente","warning",function(e){});
+
+                    valida_documento = false;
                 }
             }else if(!res.status){
-                showMessageAlert("Mensaje",res.mensaje,"warning");
+
+                $("#pers_documento").val('');
+                showMessageAlert("Mensaje",res.mensaje,"warning",function(e){});
+
+                valida_documento = false;
             }else{
                 $("#pers_nombre").attr("readonly",false);
                 $("#pers_direccion").attr("readonly",false);
@@ -177,7 +170,7 @@ $("#btn-validar-contribuyente").click(function(){
     let documento = getValue("pers_documento");
 
     if(codigo==''){
-        showMessageAlert("Mensaje",'Ingrese el codigo de contribuyente',"warning");
+        showMessageAlert("Mensaje",'Ingrese el codigo de contribuyente',"warning",function(e){});
         return false;
     }
 
@@ -191,6 +184,9 @@ $("#btn-validar-contribuyente").click(function(){
         $("#btn-validar-contribuyente").addClass('d-none');
         $("#codigo").addClass('disabled');
         setValue("contribuyente",res.nombre);
+        showMessageAlert("Mensaje",`El codigo ${codigo} de contribuyente esta vinculado al N° documento ingresado`,"success",function(e){});
+
+        valida_codigo = true;
 
       }else{
         setValue("codigo","");
@@ -198,6 +194,42 @@ $("#btn-validar-contribuyente").click(function(){
         showMessageAlert("Mensaje",`El codigo ${codigo} de contribuyente no esta vinculado al N° documento ingresado`,"warning",function(res){
             $("#codigo").focus();
         });
+
+        valida_codigo = false;
       }
     },loading=true);
+});
+
+$("#frmCuenta").submit(function(e) {
+    e.preventDefault();
+
+    if(valida_documento==false){
+        showMessageAlert("Mensaje","Debe validar el documento del contribuyente","warning",function(e){});
+        return false;
+    }
+
+    if(valida_codigo==false){
+        showMessageAlert("Mensaje","Debe validar el codigo del contribuyente","warning",function(e){});
+        return false;
+    }
+
+
+    var parametros = $(this).serialize();
+    var data = new FormData(this);
+
+    envioAjaxdata("guardar-cuenta",data,function(res){
+        if(res.status){
+            showMessageAlert("Mensaje",res.mensaje,res.accion);
+            setTimeout(function(){
+                window.location.href = 'login';
+            }, 2000);
+
+        }else{
+
+            showMessageAlert("Mensaje",res.mensaje,res.accion);
+        }
+
+        
+        $("#frmCuenta")[0].reset();
+    });
 });
