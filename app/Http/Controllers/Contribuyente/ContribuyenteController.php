@@ -10,7 +10,8 @@ class ContribuyenteController extends ApiController
 {
     public function cuponera(){
 
-        $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
+        $codigo = (int) Session::get('SESS_PERS_CONTR_CODIGO');
+        
         $page_data['url_file'] = Storage::disk('cuponera')->url('2025/'.$codigo.'.pdf');
         #$page_data['url_file'] = Storage::disk('cuponera')->url('2025/16712.pdf');
         $page_data['titulo_principal'] = 'Cuponera Virtual';
