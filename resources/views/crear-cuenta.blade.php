@@ -107,7 +107,7 @@
                                             <div class="col-md-6 align-self-xl-center">
                                                     <label for="numdoc" class="fw-bold">Codigo del Contribuyente</label>
                                                     <div class="input-group">
-                                                        <input type="text" class="form-control" id="codigo" placeholder="Ejempl. 0045811" oninput="this.value=this.value.replace(/[^0-9]/g,'');" maxlength="10">
+                                                        <input type="text" class="form-control" id="codigo" name="codigo" placeholder="Ejempl. 0045811" oninput="this.value=this.value.replace(/[^0-9]/g,'');" maxlength="10">
                                                         <div class="input-group-append">
                                                             <button class="btn btn-primary waves-effect waves-light" type="button" id="btn-validar-contribuyente"><i class="fas fa-check-circle"></i> Validar</button>
                                                         </div>

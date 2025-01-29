@@ -134,8 +134,12 @@ class LoginController extends Controller
 				$ARRAY['mensaje'] = 'El usuario ya existe registrado en la plataforma.';
 				return response()->json($ARRAY);
 			}
-
 			$persona = new Persona();
+			if(!empty($request->codigo)):
+				$codigo = str_pad($request->codigo, 7, "0", STR_PAD_LEFT);
+				$persona->PERS_CONTR_CODIGO = $codigo;
+			endif;
+			
 			$persona->PERS_DIRECCION = $request->pers_direccion;
 			$persona->PERS_DOCUMENTO = $request->pers_documento;
 			$persona->PERS_ESTADO = 1;
@@ -143,7 +147,6 @@ class LoginController extends Controller
 			$persona->PERS_NOMCOM = $PERS_NOMBRE;
 			$persona->PERS_CORREO = $request->pers_correo;
 			$persona->PERS_CELULAR = $request->pers_celular;
-			$persona->PERS_CONTR_CODIGO = $request->codigo;
 			$persona->PERS_OPERADOR = $OPERADOR;
 			$persona->PERS_TIPODOC = $request->pers_tipodoc;
 			$persona->PERS_FECING = Carbon::now();
