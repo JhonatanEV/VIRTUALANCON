@@ -32,17 +32,17 @@ class PagosEnLineaController extends Controller
     public function viewPagoLinea()
     {
         //si no tiene codigo de contribuyente enviar a la vista de registro
-        if(empty(Session::get('SESS_CODIGO_CONTRI'))){
+        // if(empty(Session::get('SESS_CODIGO_CONTRI'))){
 
             
-            $page_data['titulo_principal'] = 'Pago en Línea de Tributos';
-            $page_data['page_directory'] = 'pagalo.pago_linea';
-            $page_data['page_name'] = 'validar_contribuyente';
-            $page_data['page_title'] = 'Pago en línea';
-            $page_data['breadcrumbone'] = 'Pago en línea';
-            $page_data['breadcrumb'] = 'Validar contribuyente';
-            return view('index',$page_data);
-        }
+        //     $page_data['titulo_principal'] = 'Pago en Línea de Tributos';
+        //     $page_data['page_directory'] = 'pagalo.pago_linea';
+        //     $page_data['page_name'] = 'validar_contribuyente';
+        //     $page_data['page_title'] = 'Pago en línea';
+        //     $page_data['breadcrumbone'] = 'Pago en línea';
+        //     $page_data['breadcrumb'] = 'Validar contribuyente';
+        //     return view('index',$page_data);
+        // }
 
         $page_data['header_js'] = array(
 			'plugins/datatables/jquery.dataTables.min.js',
@@ -64,16 +64,16 @@ class PagosEnLineaController extends Controller
         'plugins/multicheck/example-styles.css'
         );
 
-        $codigo = Session::get('SESS_CODIGO_CONTRI'); #'0000255';#0000255 Session::get('SESS_CODIGO_CONTRI')
+        $codigo = Session::get('SESS_PERS_CONTR_CODIGO'); #'0000255';#0000255 Session::get('SESS_CODIGO_CONTRI')
         
-        unset($parametros);
-        $parametros[] = array('@pfacodcontr',$codigo); #Session::get('SESS_CODIGO_CONTRI')
-        $AllEcuenta = ejec_store_procedure_sql_sims("DBO.sp_ctacte_pagosonline_2024",$parametros);
+        // unset($parametros);
+        // $parametros[] = array('@pfacodcontr',$codigo); #Session::get('SESS_CODIGO_CONTRI')
+        // $AllEcuenta = ejec_store_procedure_sql_sims("DBO.sp_ctacte_pagosonline_2024",$parametros);
 
-        $contrib = Contrib::where('FACODCONTR', $codigo)->first();
+        // $contrib = Contrib::where('FACODCONTR', $codigo)->first();
 
-        $page_data['allEcuenta'] = $AllEcuenta;
-        $page_data['contribuyente'] = $contrib;
+        $page_data['allEcuenta'] = [];
+        $page_data['contribuyente'] = [];
         $page_data['titulo_principal'] = 'Pago en Línea de Tributos Predial y Arbitrios';
         $page_data['page_directory'] = 'pagalo.pago_linea';
         $page_data['page_name'] = 'index';
@@ -469,14 +469,14 @@ class PagosEnLineaController extends Controller
     }
 
     public function viewMisRecibos(){
-        $codigo = Session::get('SESS_CODIGO_CONTRI');
-        $recibos = IngCaja::where('FACODCONTR', $codigo)
-        ->where('FANROCAJA', 'PO') #SOLO PAGOS EN LINEA
-        ->OrderBy('FDFECCAJA','DESC')
-        ->OrderBy('FANROOPERA','DESC')
-        ->get();
+        $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
+        // $recibos = IngCaja::where('FACODCONTR', $codigo)
+        // ->where('FANROCAJA', 'PO') #SOLO PAGOS EN LINEA
+        // ->OrderBy('FDFECCAJA','DESC')
+        // ->OrderBy('FANROOPERA','DESC')
+        // ->get();
         
-        $page_data['recibos'] = $recibos;
+        $page_data['recibos'] = [];
         $page_data['titulo_principal'] = 'Mis recibos';
         $page_data['page_directory'] = 'pagalo.pago_linea';
         $page_data['page_name'] = 'mis_recibos';

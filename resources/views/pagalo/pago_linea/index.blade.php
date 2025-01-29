@@ -40,7 +40,7 @@
     <div class="col-md-8 contenedor-primero">
         <div class="card border-0">
             <div class="card-header">
-                <h4 class="card-title">Hola, <b>{{ trim($contribuyente->FANOMCONTR) }}</b> con codigo <b>{{ $contribuyente->FACODCONTR }}</b></h4>
+                <h4 class="card-title">Hola, <b>{{ trim($contribuyente->FANOMCONTR ?? '') }}</b> con codigo <b>{{ $contribuyente->FACODCONTR ?? ''}}</b></h4>
                 <p class="text-muted mb-0">Seleccione tipos de tributo para ver su deuda pendiente a pagar.</p>
             </div>
             <div class="card-body p-0">
