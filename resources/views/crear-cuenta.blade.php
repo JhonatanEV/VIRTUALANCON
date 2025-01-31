@@ -112,7 +112,7 @@
                                                     <div class="input-group">
                                                         <input type="text" class="form-control" id="codigo" name="codigo" placeholder="Ejempl. 0045811" oninput="this.value=this.value.replace(/[^0-9]/g,'');" maxlength="10">
                                                         <div class="input-group-append">
-                                                            <button class="btn btn-primary waves-effect waves-light" type="button" id="btn-validar-contribuyente"><i class="fas fa-check-circle"></i> Validar</button>
+                                                            <button class="btn btn-secondary waves-effect waves-light" type="button" id="btn-validar-contribuyente"><i class="fas fa-check-circle"></i> Validar</button>
                                                         </div>
                                                     </div>
                                             </div>
@@ -128,7 +128,7 @@
                                         </div>
                                         <hr>
                                         <div class="mt-2 text-center">
-                                            <button class="btn btn-dark btn-block waves-effect waves-light btn-lg" type="submit" id="btn-create-user" ><i class="fas fa-angle-right"></i> Registrar</button>
+                                            <button class="btn btn-blue btn-block waves-effect waves-light btn-lg" type="submit" id="btn-create-user" ><i class="fas fa-angle-right"></i> Registrar cuenta</button>
                                     
                                         </div>
                                     </form>

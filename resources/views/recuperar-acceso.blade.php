@@ -9,7 +9,9 @@
         <meta content="JJ. Espinoza Valera" name="author" />
         <link rel="shortcut icon" href="assets/images/logo-64x64.ico">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-
+        <script type='text/javascript'> 
+            var urljs = '@php echo URL('/').'/'; @endphp'
+        </script>
         @include('topcss')
 
         <style>
@@ -39,7 +41,7 @@
                                 <div class="card-body p-0 ">
                                     <div class="text-center p-3">
                                         <a href="#" class="logo logo-admin">
-                                            <img src="{{ asset('assets/images/logo-64x64.png') }}" height="50" alt="logo" class="auth-logo">
+                                            <img src="{{ asset('assets/images/muni.png') }}" height="50" alt="logo" class="auth-logo">
                                         </a>
                                         <h4 class="mt-3 mb-1 fw-semibold text-muted font-18">Restablecer contraseña para la Plataforma Virtual</h4>   
                                         <p class="text-muted  mb-0">¡Ingrese su correo electrónico y se le enviarán las instrucciones!</p>  
@@ -67,11 +69,11 @@
                 
                                         <div class="form-group mb-0 row">
                                             <div class="col-12 mt-2">
-                                                <button class="btn bg-muni text-white w-100 waves-effect waves-light font-16" type="submit" id="btn-solicitar">Solicitar <i class="fas fa-sign-in-alt ms-1"></i></button>
+                                                <button class="btn bg-blue text-white w-100 waves-effect waves-light font-16" type="submit" id="btn-solicitar">Solicitar <i class="fas fa-sign-in-alt ms-1"></i></button>
                                             </div><!--end col--> 
                                         </div> <!--end form-group-->                           
                                     </form><!--end form-->
-                                    <p class="text-muted mb-0 mt-3"><a href="./login" class="text-primary ms-2">Iniciar sesión</a></p>
+                                    <p class="text-muted mb-0 mt-3"><a href="./login" class="text-blue ms-2">Iniciar sesión</a></p>
                                 </div>
                                 <div class="card-body bg-light-alt text-center">
                                     <span class="text-muted d-none d-sm-inline-block">Municipalidad de Ancón © <script>
@@ -107,20 +109,19 @@
                             return false;
                         }else{
                             let data = new FormData(this);
-                            urljs = window.location.protocol + "//" + window.location.host+'/';
-                            envioAjaxdata("solicitar-clave",data,function(res){
-                                if(res.status==1){
+                            envioAjaxdata("login/recuperar-clave",data,function(res){
+                                if(res.status){
                                     var buttons = $('<div>')
                                         .append(
                                             createButton('Aceptar','btn-blue', function() {
                                                 Swal.close();
-                                                window.location.href='/login';
+                                                window.location.href = 'login';
                                             })
                                         ).get(0);
-                                        showMessageAlertHtml(res.smg,res.accion,buttons);
+                                        showMessageAlertHtml(res.mensaje,'success',buttons);
 
                                     }else{
-                                        showMessageAlert("Mensaje",res.smg,res.accion);
+                                        showMessageAlert("Mensaje",res.mensaje,'info');
                                     }
                             });
                            

@@ -184,7 +184,7 @@ $("#btn-validar-contribuyente").click(function(){
         $("#btn-validar-contribuyente").addClass('d-none');
         $("#codigo").addClass('disabled');
         setValue("contribuyente",res.nombre);
-        showMessageAlert("Mensaje",`El codigo ${codigo} de contribuyente esta vinculado al N° documento ingresado`,"success",function(e){});
+        // showMessageAlert("Mensaje",`El codigo ${codigo} de contribuyente esta vinculado al N° documento ingresado`,"success",function(e){});
 
         valida_codigo = true;
 
@@ -219,14 +219,14 @@ $("#frmCuenta").submit(function(e) {
 
     envioAjaxdata("guardar-cuenta",data,function(res){
         if(res.status){
-            showMessageAlert("Mensaje",res.mensaje,res.accion);
+            showMessageAlert("Mensaje",res.mensaje,'success',function(e){});
             setTimeout(function(){
                 window.location.href = 'login';
             }, 2000);
 
         }else{
 
-            showMessageAlert("Mensaje",res.mensaje,res.accion);
+            showMessageAlert("Mensaje",res.mensaje,'info',function(e){});
         }
 
         

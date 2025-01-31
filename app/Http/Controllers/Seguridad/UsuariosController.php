@@ -67,7 +67,7 @@ class UsuariosController extends ApiController
 
 			$persona->PERS_DOCUMENTO = $data['pers_documento'];
 			$persona->PERS_ESTADO = 1;
-			$persona->PERS_NOMCOM = $data['pers_nombre'];
+			$persona->PERS_NOMCOM = strtoupper($data['pers_nombre']);
 			$persona->PERS_CORREO = $data['pers_correo'];
 			$persona->PERS_CELULAR = $data['pers_celular'];
 			$persona->PERS_OPERADOR = $OPERADOR;

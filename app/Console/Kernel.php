@@ -13,8 +13,6 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \App\Http\Controllers\notificaciones\Commands\EnvioContinuo::class,
-        \App\Http\Controllers\notificaciones\Commands\EnviarNotificacion::class,
     ];
 
     /**

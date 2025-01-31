@@ -122,7 +122,7 @@ class LoginController extends Controller
 		$ESTACION 		= $_SERVER["SERVER_ADDR"];
 		$OPERADOR 		= Session::get('SESS_USUA_CODIGO');
 		$ARRAY 			= array();
-		$PERS_NOMBRE = str_replace("'", "", $request->pers_nombre);
+		$PERS_NOMBRE = strtoupper(str_replace("'", "", $request->pers_nombre));
 
 		try {
 			DB::beginTransaction();
@@ -145,7 +145,7 @@ class LoginController extends Controller
 			$persona->PERS_ESTADO = 1;
 			$persona->PERS_NOMBRE = $PERS_NOMBRE;
 			$persona->PERS_NOMCOM = $PERS_NOMBRE;
-			$persona->PERS_CORREO = $request->pers_correo;
+			$persona->PERS_CORREO = strtoupper($request->pers_correo);
 			$persona->PERS_CELULAR = $request->pers_celular;
 			$persona->PERS_OPERADOR = $OPERADOR;
 			$persona->PERS_TIPODOC = $request->pers_tipodoc;
@@ -165,8 +165,15 @@ class LoginController extends Controller
 			$CORREO = "";
 			if($persona):
 				if(isset($persona->PERS_CORREO)):
-					$mensaje = "Estimado(a) <b>".$persona->PERS_NOMCOM."</b>,<br>Bienvenido a la Plataforma Virtual de la Municipalidad Distrital de Ancón.<br><br>Para acceder a la plataforma, por favor ingrese con los siguientes datos:<br><br>Usuario: ".$persona->pers_documento."<br>Contraseña: ".$request->pers_documento."<br><br>Atentamente,<br>Municipalidad Distrital de Ancón";
-					#enviar_correo($CORREO, $mensaje);
+					try {
+						$CORREO = $persona->PERS_CORREO;
+						$mensaje = "Estimado(a) <b>".$persona->PERS_NOMCOM."</b>,<br>Bienvenido a la Plataforma Virtual de la Municipalidad.<br><br>Para acceder a la plataforma, por favor ingrese con los siguientes datos:<br><br>Usuario: ".$persona->USUA_USERNAME."<br>Contraseña: ".$persona->USUA_USERNAME;
+						
+						enviar_correo($CORREO, $mensaje);
+
+					} catch (\Throwable $th) {
+						Log::error('[MAIL] Error al enviar correo: '.$th->getMessage());
+					}
 				endif;
 			endif;
 
@@ -246,6 +253,47 @@ class LoginController extends Controller
 		} catch (\Throwable $th) {
 			return response()->json($th,500);
 		}
+	}
+	public function recuperarClave(Request $request){
+
+		$persona = Persona::where('PERS_DOCUMENTO',$request->get('txtcodigo'))->first();
+		if($persona){
+
+			if(strtoupper($persona->PERS_CORREO)!= strtoupper($request->get('useremail'))){
+				$array['status'] = false;
+				$array['codigo'] = 0;
+				$array['mensaje'] = 'El correo electrónico no coincide con el registrado en la plataforma.';
+				return response()->json($array);
+			}
+
+			$usuario = Usuarios::where('PERS_CODIGO',$persona->PERS_CODIGO)->first();
+			if($usuario){
+				$usuario->USUA_PASSWORD = Usuarios::hashPassword($persona->PERS_DOCUMENTO);
+				$usuario->save();
+
+				try {
+					$mensaje = "Estimado(a) <b>".$persona->PERS_NOMCOM."</b>,<br>Se ha restablecido su contraseña correctamente.<br><br>Para acceder a la plataforma, por favor ingrese con los siguientes datos:<br><br>Usuario: ".$usuario->USUA_USERNAME."<br>Contraseña: ".$usuario->USUA_USERNAME;
+					enviar_correo($persona->PERS_CORREO, $mensaje);
+
+				} catch (\Throwable $th) {
+					Log::error('[MAIL] Error al enviar correo: '.$th->getMessage());
+				}
+
+				$array['status'] = true;
+				$array['codigo'] = $persona->PERS_CODIGO;
+				$array['mensaje'] = 'La contraseña se ha actualizado correctamente. Se ha enviado un correo con la nueva contraseña.';
+			}else{
+				$array['status'] = false;
+				$array['codigo'] = 0;
+				$array['mensaje'] = 'El usuario no se encuentra registrado en la plataforma.';
+			}
+		}else{
+			$array['status'] = false;
+			$array['codigo'] = 0;
+			$array['mensaje'] = 'El usuario no se encuentra registrado en la plataforma.';
+		}
+		return response()->json($array);
+	
 	}
     public function logout () { 
        // auth()->logout();

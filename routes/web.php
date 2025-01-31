@@ -4,8 +4,6 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\Seguridad\SeguridadController as SeguridadApiController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\SeguridadController;
-use App\Http\Controllers\AdministracionController;
-use App\Http\Controllers\AreasController;
 use App\Http\Controllers\InicioController;
 use App\Http\Controllers\pide\PideController;
 use App\Http\Controllers\niubiz\NiubizController;
@@ -17,7 +15,6 @@ use App\Http\Controllers\pagalo\ReciboPdfController;
 use App\Http\Controllers\reporte_online\ReporteOnlineController;
 use App\Http\Controllers\notificaciones\NotificacionesBandejaController;
 use App\Http\Controllers\Contribuyente\ContribuyenteController;
-use App\Http\Controllers\Seguridad\PerfilController;
 use App\Http\Controllers\Seguridad\UsuariosController;
 
 #Route::get('/', [InicioController::class, 'index'])->name('inicio');
@@ -28,6 +25,7 @@ Route::prefix('login')->group(function () {
     Route::get('/', [LoginController::class, 'index'])->name('login');
     Route::post('/valida', [SeguridadApiController::class, 'login'])->name('valida-user');
     Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::post('/recuperar-clave', [LoginController::class, 'recuperarClave'])->name('recuperar-clave');
 });
 
 Route::middleware(['session.check'])->group(function () {
@@ -63,28 +61,6 @@ Route::middleware(['session.check'])->group(function () {
         Route::get('/', [MainController::class, 'index']);
         Route::post('save-clave', [SeguridadController::class, 'guardarClave'])->name('save-clave');
         Route::get('claveView', [SeguridadController::class, 'claveView'])->name('claveView');
-        #OPCIONES
-        Route::get('opciones', [SeguridadController::class, 'opciones'])->name('opciones')->middleware('validarAcceso');
-        Route::get('select-opciones', [SeguridadController::class, 'selectOpciones'])->name('select-opciones');
-        Route::get('select-menu-opciones', [SeguridadController::class, 'selectCmbMenuOpciones'])->name('select-menu-opciones');
-        Route::post('guardar-opcion', [SeguridadController::class, 'guardarOpciones'])->name('guardar-opcion');
-        Route::get('editar-opcion', [SeguridadController::class, 'editarOpciones'])->name('editar-opcion');
-        Route::get('eliminar-opcion', [SeguridadController::class, 'eliminarOpcion'])->name('eliminar-opcion');
-
-        #ROLES
-        Route::get('roles', [SeguridadController::class, 'roles'])->name('roles')->middleware('validarAcceso');
-        Route::get('select-roles', [PerfilController::class, 'index'])->name('select-roles');
-        Route::get('eliminar-rol', [SeguridadController::class, 'eliminarRoles'])->name('eliminar-rol');
-        Route::get('select-leyendas', [SeguridadController::class, 'selectLeyendasOpcion'])->name('select-leyendas');
-        Route::get('select-sub-leyendas', [SeguridadController::class, 'selectLeyendasSubOpcion'])->name('select-sub-leyendas');
-        Route::get('grabar-opcion-roles', [SeguridadController::class, 'grabarOpcionRoles'])->name('grabar-opcion-roles');
-        Route::post('grabar-roles', [SeguridadController::class, 'grabarRoles'])->name('grabar-roles');
-
-        #PERSONA
-        Route::get('personas', [SeguridadController::class, 'personas'])->name('personas')->middleware('validarAcceso');
-        Route::get('select-personas', [SeguridadController::class, 'selectPersonas'])->name('select-personas');
-        Route::get('eliminar-persona', [SeguridadController::class, 'eliminarPersona'])->name('eliminar-persona');
-        Route::post('guardar-persona', [SeguridadController::class, 'grabarPersona'])->name('guardar-persona');
 
         #USUARIO
         Route::get('usuarios', [SeguridadController::class, 'usuarios'])->name('usuarios')->middleware('validarAcceso');
@@ -98,36 +74,7 @@ Route::middleware(['session.check'])->group(function () {
         Route::get('cambiar-area', [SeguridadController::class, 'cambiarArea'])->name('cambiar-area');
         Route::get('accesos-usuario', [SeguridadController::class, 'accesosUsuario'])->name('accesos-usuario');
         Route::get('grabar-acceso-usuario', [SeguridadController::class, 'grabarAccesoUsuario'])->name('grabar-acceso-usuario');
-
-
-        #CONFIGURACION
-        Route::get('perfil', [SeguridadController::class, 'perfil'])->name('perfil');
-        Route::get('tipo-contactos', [SeguridadController::class, 'selectTipoContactos'])->name('tipo-contactos');
-        Route::get('select-contactos', [SeguridadController::class, 'selectContactos'])->name('select-contactos');
-        Route::get('grabar-contactos', [SeguridadController::class, 'grabarContactos'])->name('grabar-contactos');
-        Route::get('eliminar-contacto', [SeguridadController::class, 'eliminarContactos'])->name('eliminar-contacto');
-        Route::get('select-contactos-individual', [SeguridadController::class, 'selectContactosIndivudual'])->name('select-contactos-individual');
-        
-        Route::get('documentacion', [SeguridadController::class, 'viewDocumentacion'])->name('documentacion');
     });
-
-});
-
-Route::prefix('areas')->group(function () {
-    Route::get('/', [AreasController::class, 'vistaArea']);
-    Route::get('select-areas', [AreasController::class, 'selectAreas'])->name('select-areas');
-    Route::post('guardar-areas', [AreasController::class, 'guardarArea'])->name('guardar-areas');
-    Route::get('eliminar-area', [AreasController::class, 'eliminarArea'])->name('eliminar-area');
-    Route::get('select-tema', [AreasController::class, 'selectTemas'])->name('select-tema');
-
-});
-
-Route::prefix('administracion')->group(function () {
-    Route::get('/', [AdministracionController::class, 'vistaArea']);
-    Route::get('horarios-de-cita', [AdministracionController::class, 'vistaHorarios'])->name('horarios-de-cita');
-    Route::get('select-horarios', [AdministracionController::class, 'selectHorarios'])->name('select-horarios');
-    Route::post('valid-persona', [AdministracionController::class, 'validarPersona'])->name('valid-persona')->middleware('validate.frontend');
-    Route::get('horarios-existentes', [AdministracionController::class, 'selectHorariosExistentes'])->name('horarios-existentes');
 
 });
 

@@ -10,26 +10,7 @@ use App\Http\Controllers\pagalo\Models\Contrib;
 
 class EstadoCuentaPrintController extends Controller
 {
-    // public function dataEstadoCuenta($anio_desde,$anio_hasta){
 
-    //     $codigo = Session::get('SESS_CODIGO_CONTRI');
-
-    //     unset($parametros);
-    //     $parametros[] = array('@lsp_facodcontr',$codigo);
-    //     $parametros[] = array('@lsp_facodtribu','');
-    //     $parametros[] = array('@lsp_faanotribui',$anio_desde);
-    //     $parametros[] = array('@lsp_faanotribuf',$anio_hasta);
-    //     $parametros[] = array('@lsp_faanexoi','0000');
-    //     $parametros[] = array('@lsp_faanexof','9999');
-    //     $parametros[] = array('@lsp_faestrecib','P');
-    //     $parametros[] = array('@lsp_fatipo','3');
-    //     $parametros[] = array('@lsp_nocon','');
-    //     $parametros[] = array('@lsp_notam','');
-    //     $parametros[] = array('@lsp_faestado','PENDIENTE');
-    //     $parametros[] = array('@ldt_fechaact',date('d-m-Y H:i:s'));
-    //     $arbEcuenta = ejec_store_procedure_sql_sims("DBO.SP_RENTAS_LISTADO_CTACTE",$parametros);
-    //     return $arbEcuenta;
-    // }
     public function dataEstadoCuenta($anio_desde,$anio_hasta){
 
         $codigo = Session::get('SESS_CODIGO_CONTRI');
