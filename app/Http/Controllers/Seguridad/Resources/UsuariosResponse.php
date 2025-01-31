@@ -20,7 +20,10 @@ class UsuariosResponse extends JsonResource
             'pers_fecnaci' => ($this->persona) ? $this->persona->PERS_FECNACI : '',
             'pers_direccion' => ($this->persona) ? $this->persona->PERS_DIRECCION : '',
             'pers_ocupacion' => ($this->persona) ? $this->persona->PERS_OCUPACION : '',
-
+            'pers_contr_codigo' => ($this->persona) ? $this->persona->PERS_CONTR_CODIGO : '',
+            'pers_tipodoc' => ($this->persona) ? $this->persona->PERS_TIPODOC : '',
+            'pers_correo' => ($this->persona) ? $this->persona->PERS_CORREO : '',
+            'pers_celular' => ($this->persona) ? $this->persona->PERS_CELULAR : '',
             'usua_codigo' => intval($this->USUA_CODIGO),
             'pers_documento' => ($this->persona) ? $this->persona->PERS_DOCUMENTO : '',
             'usua_username' => $this->USUA_USERNAME,

@@ -18,8 +18,8 @@
         <!-- App Css-->
         <link href="{{ asset('assets/css/app.min.css') }}" id="app-style" rel="stylesheet" type="text/css" />
         <link rel="stylesheet" href="{{ asset('assets/css/style-login.css') }}">
-        <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
-
+        <link href="{{ asset('assets/plugins/toastr/build/toastr.min.css') }}" rel="stylesheet" type="text/css" />
+        <script src="{{ asset('assets/plugins/toastr/build/toastr.min.js') }}"></script>
         <script type='text/javascript'> 
             var urljs = "";
         </script>
@@ -55,7 +55,6 @@
                                         <div class="col-md-12">
                                             <h2 class="mt-3 text-white">Bienvenido a la <span class="text-white">{{ config('app.SISTEMA') }}</span> </h2>
                                             <h1 class="text-white fw-bold">Empecemos</h1>
-                                            <a href="./" class="btn btn-lg btn-light" ><i class="fas fa-home me-2"></i>Regresar</a><br>
                                             
                                         </div>
                                     </div>
@@ -139,21 +138,6 @@
      
         <script type="text/javascript">
 
-            // $("#btn-login").attr("disabled",true);
-            //  $('#btn-login').css('cursor','default');
-            //  var correctCaptcha = function(response) {
-
-            //     if (response.length==0) {
-            //         $("#btn-login").attr("disabled",true);
-            //         $('#btn-login').css('cursor','default');
-            //     }else{
-            //         $("#btn-login").attr("disabled",false);
-            //         $("#btn-login").removeClass("btn-secondary");
-            //         $("#btn-login").addClass("btn-primary");
-            //         $('#btn-login').css('cursor','pointer');
-            //     }
-            //  };
-
             $("#password-addon").click(function(){
                 var tipo = document.getElementById("password");
                   if(tipo.type == "password"){
@@ -165,14 +149,6 @@
                   }
             });
 
-            // $("#btn-login").click(function(){
-            //     login();
-            // });
-            // $("#password").keypress(function(e) {
-            //    if(e.which == 13) {
-            //       login();
-            //    }
-            // });
 
             $("#form1").submit(function(e) {
                     e.preventDefault();
@@ -197,6 +173,7 @@
                         contentType: false,
                         beforeSend:function(){
                             $("#btn-login").html('Validando...');
+                            $("#btn-login").attr("disabled",true);
                         },
                         success: function(response){
                             $("#btn-login").html('Iniciar Sesión');
@@ -217,8 +194,9 @@
                             }
                         },
                         error:function(){
-                            showMessage('error','Ocurrio un problema!','Alerta');
+                            showMessage('error','Usuario o contraseña incorrecta, intente nuevamente!','Alerta');
                             $("#btn-login").html('Iniciar Sesión');
+                            $("#btn-login").attr("disabled",false);
                         }
                         });
 

@@ -9,7 +9,7 @@ use Session;
 class InicioController extends Controller
 {
     public function redirectToInicio(){
-        return redirect()->route('inicio');
+        return redirect()->route('login');
     }
     public function index(){
 

@@ -62,7 +62,6 @@
                     </button> 
 
                 <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" href="javascript:verPerfil()"><i data-feather="user" class="align-self-center icon-xs icon-dual me-1"></i> Perfil</a>
                     <a class="dropdown-item" href="javascript:cambiarClave()"><i data-feather="settings" class="align-self-center icon-xs icon-dual me-1"></i> Cambiar contraseña</a>
                     <div class="dropdown-divider mb-0"></div>
                     <a class="dropdown-item text-success" href="{{ route('logout') }}"><i data-feather="power" class="align-self-center icon-xs icon-dual me-1 text-success"></i> Cerrar sesión</a>

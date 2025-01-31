@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api\Seguridad;
+namespace App\Http\Controllers\Seguridad;
 use App\Http\Controllers\ApiController;
-use App\Http\Controllers\Api\Seguridad\Models\Usuarios;
-use App\Http\Controllers\Api\Seguridad\Models\Accesos;
+use App\Http\Controllers\General\Models\Persona;
+use App\Http\Controllers\Seguridad\Models\Usuarios;
+use App\Http\Controllers\Seguridad\Models\Accesos;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Api\Seguridad\Resources\UsuariosResponse;
-use App\Http\Controllers\Api\Seguridad\Resources\AccesosUsuariosResource;
+use App\Http\Controllers\Seguridad\Resources\UsuariosResponse;
+use App\Http\Controllers\Seguridad\Resources\AccesosUsuariosResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -14,14 +15,14 @@ class UsuariosController extends ApiController
 {
     function __construct()
     {
-        $this->middleware('auth:api');
     }
     public function index(Request $request)
     {
         try {
             $usuarios = Usuarios::search($request)->orderBy('USUA_CODIGO', 'DESC')
-            ->paginate(($request->per_page) ? $request->per_page : 10);
-
+            ->with('persona')
+            ->with('perfil')
+            ->get();
             #return $this->successResponse($usuarios);
             return UsuariosResponse::collection($usuarios);
         } catch (\Throwable $th) {
@@ -45,17 +46,42 @@ class UsuariosController extends ApiController
     {
         try {
             DB::beginTransaction();
+            $data = $request->json()->all();
 
-            $usuario = new Usuarios();
-            $usuario->PERS_CODIGO = $request->pers_codigo;
-            $usuario->PERF_CODIGO = $request->perf_codigo;
-            $usuario->USUA_USERNAME = $request->usua_username;
-            $usuario->USUA_PASSWORD = Usuarios::hashPassword($request->usua_username);
-            $usuario->USUA_ESTADO = $request->usua_estado;
+            $usuario = Usuarios::where('USUA_CODIGO',$data['usua_codigo'])->first();
+            if(!$usuario){
+                $usuario = new Usuarios();
+            }
+
+            $persona = Persona::where('PERS_CODIGO',$data['pers_codigo'])->first();
+            if(!$persona){
+			    $persona = new Persona();
+            }
+
+			if(!empty($data['pers_contr_codigo'])):
+				$codigo = str_pad($data['pers_contr_codigo'], 7, "0", STR_PAD_LEFT);
+				$persona->PERS_CONTR_CODIGO = $codigo;
+			endif;
+            
+            $OPERADOR = $_SERVER["SERVER_ADDR"];
+
+			$persona->PERS_DOCUMENTO = $data['pers_documento'];
+			$persona->PERS_ESTADO = 1;
+			$persona->PERS_NOMCOM = $data['pers_nombre'];
+			$persona->PERS_CORREO = $data['pers_correo'];
+			$persona->PERS_CELULAR = $data['pers_celular'];
+			$persona->PERS_OPERADOR = $OPERADOR;
+			$persona->PERS_TIPODOC = $data['pers_tipodoc'];
+			$persona->PERS_FECING = Carbon::now();
+			$persona->save();
+
+            $usuario->PERS_CODIGO = $data['pers_codigo'];
+            $usuario->PERF_CODIGO = $data['perf_codigo'];
+            $usuario->USUA_USERNAME = $data['usua_username'];
+            $usuario->USUA_PASSWORD = ($data['usua_password'] && !empty($data['usua_password'])) ? Usuarios::hashPassword($data['usua_password']) : $usuario->USUA_PASSWORD;
+            $usuario->USUA_ESTADO = $data['usua_estado'];
             $usuario->USUA_FECHING = Carbon::now();
             $usuario->save();
-
-            $usuario->assignRolesAndMenus();
 
             DB::commit();
 
@@ -102,12 +128,15 @@ class UsuariosController extends ApiController
         }
     }
 
-    public function activar($id)
+    public function activar(Request $request)
     {
         try {
+            $data = $request->json()->all();
+            $id = $data['usua_codigo'];
+
             $usuario = Usuarios::findOrFail($id);
         
-            $usuario->USUA_ESTADO = 1;
+            $usuario->USUA_ESTADO = $data['usua_estado'];
             $usuario->save();
 
             return $this->successResponse();

@@ -18,6 +18,7 @@ use App\Http\Controllers\reporte_online\ReporteOnlineController;
 use App\Http\Controllers\notificaciones\NotificacionesBandejaController;
 use App\Http\Controllers\Contribuyente\ContribuyenteController;
 use App\Http\Controllers\Seguridad\PerfilController;
+use App\Http\Controllers\Seguridad\UsuariosController;
 
 #Route::get('/', [InicioController::class, 'index'])->name('inicio');
 Route::get('inicio', [InicioController::class, 'redirectToInicio'])->name('inicio');
@@ -51,7 +52,13 @@ Route::post('valida-contribuyente', [LoginController::class, 'validarContribuyen
 Route::post('buscar-contribuyente', [LoginController::class, 'buscarContribuyente'])->name('buscar-contribuyente');
 
 Route::middleware(['session.check'])->group(function () {
-
+    Route::prefix('seguridad')->group(function () {
+        Route::prefix('usuarios')->group(function () {
+            Route::get('/listar', [UsuariosController::class, 'index']);
+            Route::post('/actualizar-estado', [UsuariosController::class, 'activar']);
+            Route::post('/guardar', [UsuariosController::class, 'store']);
+        });
+    });
     Route::prefix('seguridad')->group(function () {
         Route::get('/', [MainController::class, 'index']);
         Route::post('save-clave', [SeguridadController::class, 'guardarClave'])->name('save-clave');
