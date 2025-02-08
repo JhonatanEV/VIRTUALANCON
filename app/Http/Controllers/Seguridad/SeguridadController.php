@@ -50,6 +50,8 @@ class SeguridadController extends ApiController
             Session::put('SESS_NOMBRE_COMPLETO', $model->persona->PERS_NOMCOM);
             session::put('SESS_PERS_DOCUMENTO', $model->persona->PERS_DOCUMENTO);
             session::put('SESS_PERS_CONTR_CODIGO', $model->persona->PERS_CONTR_CODIGO);
+            session::put('SESS_PERS_CORREO', $model->persona->PERS_CORREO);
+            session::put('SESS_PERS_CELULAR', $model->persona->PERS_CELULAR);
 
             Session::put('SESS_PERF_NOMBRE', $model->perfil->PERF_NOMBRE);
             Session::put('SESS_USUA_CORREO', $model->USUA_CORREO);

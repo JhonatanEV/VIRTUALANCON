@@ -68,7 +68,7 @@
                                 <th class="text-center fw-bold">INSOLUTO</th>
                                 <th class="text-center fw-bold">REAJUSTE</th>
                                 <th class="text-center fw-bold">EMISIÓN</th>
-                                <th class="text-center fw-bold">COSTAS</th>
+                                <th class="text-center fw-bold">MORA</th>
                                 <th class="text-center fw-bold">TOTAL</th>
                                 <th class="text-center fw-bold">ANEXO</th>
                                 <th class="text-center fw-bold">SITU.</th>
@@ -82,38 +82,31 @@
                         </thead>
                         <tbody>
                             @foreach($allEcuenta as $ecuenta)
-                            @php
-                                if($ecuenta->FACODTRIBU == 'IP'):
-                                    $anexo_arb = $ecuenta->FADESTRIBU;
-                                else:
-                                    $anexo_arb = 'ANEXO: '.$ecuenta->FAANEXO.' - '.$ecuenta->DOMICILIO_PREDIO;
-                                endif;
-                            @endphp
                             <tr>
-                                <td class="dtr-control">{{ $ecuenta->FADESTRIBUC }}</td>
-                                <td class="text-end">{{ $ecuenta->FAANOTRIBU }}</td>
-                                <td class="text-end">{{ $ecuenta->FAPERIODO }}</td>
-                                <td class="text-end">{{ \Carbon\Carbon::parse($ecuenta->FECVENC)->format('d/m/Y') }}</td>
-                                <td class="text-end fw-bold">{{ $ecuenta->SITUACION }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->INSOLUTO,2) }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->FNMORA,2) }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->FNGASADMIN,2) }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->COSTAS,2) }}</td>
-                                <td class="text-end total-pie-tabla">{{ number_format($ecuenta->TOTAL,2) }}</td>
-                                <td>{{ $anexo_arb }}</td>
-                                <td class="text-end">{{ substr($ecuenta->SITUACION, 0, 3) }}</td>
+                                <td class="dtr-control">{{ $ecuenta->vdescri }}</td>
+                                <td class="text-end">{{ $ecuenta->cperanio }}</td>
+                                <td class="text-end">{{ $ecuenta->cperiod }}</td>
+                                <td class="text-end">{{ \Carbon\Carbon::parse($ecuenta->dfecven)->format('d/m/Y') }}</td>
+                                <td class="text-end fw-bold">PENDIENTE</td>
+                                <td class="text-end">{{ number_format($ecuenta->saldo_fijo,2) }}</td>
+                                <td class="text-end">{{ number_format($ecuenta->reajuste,2) }}</td>
+                                <td class="text-end">{{ number_format($ecuenta->costo_emis,2) }}</td>
+                                <td class="text-end">{{ number_format($ecuenta->mora,2) }}</td>
+                                <td class="text-end total-pie-tabla">{{ number_format($ecuenta->total,2) }}</td>
+                                <td>{{ $ecuenta->cidpred }}</td>
+                                <td class="text-end">SITUACION</td>
                                 <td class="text-center">
                                     <div class="col-md">
                                         <input 
                                         type="checkbox" 
                                         class="form-check-input font-24 mis-tributos" 
                                         name="recibo[]" 
-                                        id="recibo{{ $ecuenta->LLAVE }}" 
+                                        id="recibo{{ $ecuenta->llave }}" 
                                         autocomplete="off" 
-                                        precio-trib="{{ $ecuenta->TOTAL }}"
-                                        codigo="{{ $ecuenta->LLAVE }}"
+                                        precio-trib="{{ $ecuenta->total }}"
+                                        codigo="{{ $ecuenta->llave }}"
                                         value="1">
-                                        {{-- <label class="btn btn-outline-info btn-sm text-white" for="recibo{{ $ecuenta->LLAVE }}">
+                                        {{-- <label class="btn btn-outline-info btn-sm text-white" for="recibo{{ $llave }}">
                                             <i class="fas fa-check"></i>
                                         </label> --}}
                                     </div>
@@ -131,7 +124,7 @@
         <div class="row" style="position: sticky;top: 58px;">
             <div class="col-lg-12">
                 <ul class="list-group">
-                    <li class="list-group-item text-center justify-content-between align-items-center bg-muni">
+                    <li class="list-group-item text-center justify-content-between align-items-center bg-blue">
                         <div>
                             <span class="text-white"> <i class="fas fa-shopping-cart text-white font-20 me-2"></i> Monto Total:</span>
                         </div>
@@ -161,7 +154,7 @@
 <div class="modal fade" id="modalProcesar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-muni p-2">
+            <div class="modal-header bg-blue p-2">
                 <h6 class="modal-title m-0 text-white" id="exampleModalPrimary1">Procesar mis deudas seleccionadas - <b>{{ Session::get('SESS_NOMBRE_COMPLETO') }}</b></h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

@@ -1,21 +1,20 @@
 <?php
-namespace App\Models\Casilla;
+namespace App\Http\Controllers\pagalo\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
-class Categoria extends Model
+class Response extends Model
 {
-    protected $table = 'CASILLA.CATEGORIA';
+    protected $table = 'virtual.RESPONSE';
 
-    protected $primaryKey = 'CATE_CODIGO';
+    protected $primaryKey = 'ID';
 
     public $keyType = 'int';
-
     public $timestamps = false;
 
     public $incrementing = true;
     
     protected $fillable = [
     ];
-
 }

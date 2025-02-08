@@ -79,11 +79,12 @@
                                     <label class="form-label mb-0" for="perf_codigo">Perfil de Usuario</label>
                                     <select class="form-select" id="perf_codigo" name="perf_codigo" required>
                                         <option>-- Seleccione --</option>
+                                        <option value="3">CONTRIBUYENTE</option>
                                     </select>
                                 </div>
                                 <div class="col-lg-6 col-6">
                                     <label class="form-label mb-0" for="pers_contr_codigo">Codigo contribuyente</label>
-                                    <input type="text" class="form-control" id="pers_contr_codigo" name="pers_contr_codigo" placeholder="Codigo contribuyente" maxlength="7">
+                                    <input type="text" class="form-control" id="pers_contr_codigo" name="pers_contr_codigo" placeholder="Codigo contribuyente" maxlength="10">
                                 </div>
 
                                 <div class="col-lg-6 col-6 mb-3">

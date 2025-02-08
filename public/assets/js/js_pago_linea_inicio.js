@@ -14,13 +14,13 @@ $(document).ready(function () {
     //dataArb = JSON.parse(localStorage.getItem("deuda_arb"));
     //dataCoac = JSON.parse(localStorage.getItem("deuda_coac"));
 
-    let anios_unicos = dataCta.map((item) => item.FAANOTRIBU).filter((value, index, self) => self.indexOf(value) === index);
+    let anios_unicos = dataCta.map((item) => item.cperanio).filter((value, index, self) => self.indexOf(value) === index);
     anios_unicos.sort((a, b) => b - a);
 
-    let anexos = Object.values(dataCta).map(item => item.FAANEXO).filter((value, index, self) => self.indexOf(value) === index); 
+    let anexos = Object.values(dataCta).map(item => item.cidpred).filter((value, index, self) => self.indexOf(value) === index); 
     anexos.sort((a, b) => b - a);
 
-    let htmlanexos = `<option value="PREDIAL">Impuesto Predial</option>`;
+    let htmlanexos = `<option value="1">Impuesto Predial</option>`;
     anexos.forEach((anexo) => {
         if(anexo!='0000'){
             htmlanexos += `<option value="${anexo}">Anexo ${anexo}</option>`;
@@ -86,14 +86,6 @@ $(document).ready(function () {
     $("#CMB_ANEXO").on("change", function () {
         var anexos = $(this).val();
         tableImpuesto.column(10).search(anexos.join("|"), true, false).draw();
-
-        /*
-            if (anexos && anexos.length > 0) {
-            tableImpuesto.column(10).search(anexos.join("|"), true, false).draw();
-        } else {
-            tableImpuesto.column(10).search("").draw();
-        }
-        */
     });
 
     /**************************************************************************COACTIVO***************************************/
@@ -105,22 +97,22 @@ $(document).ready(function () {
         return item.ESTADO_DEUDA == 'C';
     });
     totalCoactivo = dataCoac.reduce(function (a, b) {
-        return a + parseFloat(b.TOTAL);
+        return a + parseFloat(b.total);
     }, 0);
 
 
     var totalVencidos = 0;
     var dataVencidos = dataCta.filter(function (item) {
-        return moment(item.FECVENC).isBefore(moment());
+        return moment(item.dfecven).isBefore(moment());
     });
 
     totalVencidos = dataVencidos.reduce(function (a, b) {
-        return a + parseFloat(b.TOTAL);
+        return a + parseFloat(b.total);
     }, 0);
 
     var totalGeneral = 0;
     totalGeneral = dataCta.reduce(function (a, b) {
-        return a + parseFloat(b.TOTAL);
+        return a + parseFloat(b.total);
     }, 0);
 
     actualizarTotalYMostrarBoton(totalCoactivo, "#txtTotalPagarCOAC", "#btn-pagar-coac");
@@ -250,7 +242,7 @@ $(document).ready(function () {
                 var rows = table.rows().nodes();
                 $('input[type="checkbox"]', rows).each(function () {
                     let codigoUnico = $(this).attr("codigo");
-                    if (dataCoac.some(tributo => tributo.LLAVE == codigoUnico)) {
+                    if (dataCoac.some(tributo => tributo.llave == codigoUnico)) {
                         $(this).prop("checked", true).closest('tr').addClass("selected");
                     }
                 });
@@ -260,13 +252,13 @@ $(document).ready(function () {
             listarDeudaSeleccionada();
         }else{
             dataCoac.forEach(function (tributo) {
-                buscarCtaQuitar(tributo.LLAVE);
+                buscarCtaQuitar(tributo.llave);
             });
             function desmarcarChecks(table) {
                 var rows = table.rows().nodes();
                 $('input[type="checkbox"]', rows).each(function () {
                     let codigoUnico = $(this).attr("codigo");
-                    if (dataCoac.some(tributo => tributo.LLAVE == codigoUnico)) {
+                    if (dataCoac.some(tributo => tributo.llave == codigoUnico)) {
                         $(this).prop("checked", false).closest('tr').removeClass("selected");
                     }
                 });
@@ -287,7 +279,7 @@ $(document).ready(function () {
                 var rows = table.rows().nodes();
                 $('input[type="checkbox"]', rows).each(function () {
                     let codigoUnico = $(this).attr("codigo");
-                    if (dataVencidos.some(tributo => tributo.LLAVE == codigoUnico)) {
+                    if (dataVencidos.some(tributo => tributo.llave == codigoUnico)) {
                         $(this).prop("checked", true).closest('tr').addClass("selected");
                     }
                 });
@@ -299,14 +291,14 @@ $(document).ready(function () {
             listarDeudaSeleccionada();
         } else {
             dataVencidos.forEach(function (tributo) {
-                buscarCtaQuitar(tributo.LLAVE);
+                buscarCtaQuitar(tributo.llave);
             });
     
             function desmarcarChecks(table) {
                 var rows = table.rows().nodes();
                 $('input[type="checkbox"]', rows).each(function () {
                     let codigoUnico = $(this).attr("codigo");
-                    if (dataVencidos.some(tributo => tributo.LLAVE == codigoUnico)) {
+                    if (dataVencidos.some(tributo => tributo.llave == codigoUnico)) {
                         $(this).prop("checked", false).closest('tr').removeClass("selected");
                     }
                 });
@@ -328,36 +320,35 @@ function listarDeudaSeleccionada() {
 
     dataSelectedIp = [];
     dataSelectedArb = [];
-
+    
     let dataAgrupada = dataSelected.reduce((acc, curr) => {
         // Inicializa el grupo si no existe
-        if (!acc[curr.FADESTRIBU]) {
-            acc[curr.FADESTRIBU] = { 
+        if (!acc[curr.vdescri]) {
+            acc[curr.vdescri] = { 
                 tipo: '',
                 total: 0, 
                 coactivo: 0,
                 data: []
             };
         }
-        if(curr.facodtribu == 'IP'){
+        if(curr.ctiping == '0000000273'){
             dataSelectedIp.push(curr);
-        }else if(curr.facodtribu == 'AR'){
+        }else if(curr.ctiping == '0000000278'){
             dataSelectedArb.push(curr);
         }
-        // Suma el TOTAL al total de FADESTRIBU
-        acc[curr.FADESTRIBU].total += parseFloat(curr.TOTAL);
+        // Suma el TOTAL al total de vdescri
+        acc[curr.vdescri].total += parseFloat(curr.total);
         
-        acc[curr.FADESTRIBU].tipo = curr.facodtribu;
-        acc[curr.FADESTRIBU].data.push(curr);
+        acc[curr.vdescri].tipo = curr.ctiping;
+        acc[curr.vdescri].data.push(curr);
 
         // Si fasitrecib es 'E' o 'T', acumula en coactivo
         if (curr.fasitrecib === 'E' || curr.fasitrecib === 'T') {
-            acc[curr.FADESTRIBU].coactivo += parseFloat(curr.TOTAL);
+            acc[curr.vdescri].coactivo += parseFloat(curr.total);
         }
     
         return acc;
     }, {});
-    
     // Recorrer agrupado
     for (const key in dataAgrupada) {
         if (Object.hasOwnProperty.call(dataAgrupada, key)) {
@@ -410,14 +401,14 @@ function listarDeudaSeleccionada() {
 function buscarCta(codigoUnico) {
     //si ya existe en dataSelected no lo agrega
     let existe = dataSelected.filter(function (item) {
-        return item.LLAVE == codigoUnico;
+        return item.llave == codigoUnico;
     });
     if (existe.length > 0) {
         return [];
     }
     //agregar a dataSelected
     let tributo = dataCta.filter(function (item) {
-        return item.LLAVE == codigoUnico;
+        return item.llave == codigoUnico;
     });
     if (tributo.length > 0) {
         return tributo;
@@ -428,18 +419,10 @@ function buscarCta(codigoUnico) {
 
 function buscarCtaQuitar(codigoUnico) {
     dataSelected = dataSelected.filter(function (item) {
-        return item.LLAVE != codigoUnico;
+        return item.llave != codigoUnico;
     });
 }
 /***************************************************************************PROCESAR***********************************************/
-// function procesarSeleccionTributo(tipo){
-//     if(tipo == 'IP'){
-//         procesarSeleccion(dataSelectedIp, tipo);
-//     }else if(tipo == 'AR'){
-//         procesarSeleccion(dataSelectedArb, tipo);
-//     }
-// }
-
 
 $(".btn-procesar").on("click", function () {
     
@@ -465,7 +448,7 @@ async function procesarSeleccion(){
     let url = "pago-linea/procesar";
     let frm = new FormData();
     frm.append("data", JSON.stringify(dataSelected));
-    //frm.append("tipo", tipo);
+    frm.append("total", $("#txtMontoSeleccion").val());
 
     await fetch(urljs+url, {
         method: "POST",
@@ -488,23 +471,23 @@ async function procesarSeleccion(){
             let tributodetalle = '';
             dataArray.forEach(function (tributo) {
 
-                if(tributo.FACODTRIBU == 'IP'){
-                    tributodetalle = tributo.FADESTRIBU;
+                if(tributo.ctiping == '0000000278'){
+                    tributodetalle = tributo.vdescri;
                 }else{
-                    tributodetalle = 'ANEXO: '+tributo.FAANEXO+' - '+tributo.DIRANEXO;
+                    tributodetalle = 'ANEXO: '+tributo.cidpred+' - '+tributo.vdescri;
                 }
 
                 html += "<tr>";
                 html += "<td class='white-space'>" + tributodetalle + "</td>";
-                html += "<td>" + tributo.FAANOTRIBU + "</td>";
-                html += "<td>" + tributo.FAPERIODO + "</td>";
-                html += "<td class='text-end'>" + number_format(tributo.MONTO ?? 0,2) + "</td>";
-                html += "<td class='text-end'>" + number_format(tributo.DESCUENTO,2) + "</td>";
-                html += "<td class='text-end'>" + number_format(tributo.TOTAL,2) + "</td>";
+                html += "<td>" + tributo.cperanio + "</td>";
+                html += "<td>" + tributo.cperiod + "</td>";
+                html += "<td class='text-end'>" + number_format(tributo.total ?? 0,2) + "</td>";
+                html += "<td class='text-end'>" + number_format(0,2) + "</td>";
+                html += "<td class='text-end'>" + number_format(tributo.total,2) + "</td>";
                 html += "</tr>";
-                subtotal += parseFloat(tributo.MONTO);
-                total += parseFloat(tributo.TOTAL);
-                total_descuento += parseFloat(tributo.DESCUENTO);
+                subtotal += parseFloat(tributo.total);
+                total += parseFloat(tributo.total);
+                total_descuento += parseFloat(0);
             });
             
             $(".MontoSeleccionado").html(`<h4 class="text-danger font-15">SubTotal: S/ ${number_format(subtotal,2)}</h4>
@@ -529,20 +512,6 @@ async function procesarSeleccion(){
                             .append("<td colspan='6' class='text-start'><strong>" + group + "</strong></td>");
                     }
                 },
-                // "order": [[0, 'asc']],
-                // "drawCallback": function (settings) {
-                //     var api = this.api();
-                //     var rows = api.rows({ page: 'current' }).nodes();
-                //     var last = '';
-                //     api.column(0, { page: 'current' }).data().each(function (group, i) {
-                //         if (last !== group) {
-                //             $(rows).eq(i).before(
-                //                 '<tr class="group bg-soft-blue"><td colspan="10">' + group + '</td></tr>'
-                //             );
-                //             last = group;
-                //         }
-                //     });
-                // }
             });
 
             OpenModal("#modalProcesar");
@@ -590,7 +559,7 @@ $("#btnPagarDeuda").on("click", function () {
         }else{
             $("body").removeClass("loader");
             showMessageAlert("Error", res.mensaje, "error",function(){
-                location.reload();
+                // location.reload();
             });
         }
     }).catch(err => {

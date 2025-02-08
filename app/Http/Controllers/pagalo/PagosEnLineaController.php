@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use App\Notifications\ReciboNotification;
 use Illuminate\Support\Facades\Notification;
+use App\Http\Controllers\pagalo\Repositories\EstadoCuentaRespository;
+use App\Http\Controllers\pagalo\Models\Response;
 
 class PagosEnLineaController extends Controller
 {   
@@ -23,10 +25,7 @@ class PagosEnLineaController extends Controller
     protected $pdfService;
     public function __construct()
     {
-        $this->visaCredentialss;#config('visa.current_credentials')();
-        
-        $this->visaServiceOnline = new VisaService($this->visaCredentialss);
-        
+        $this->visaServiceOnline = new VisaService();
         $this->pdfService = new PdfReciboServices();
     }
     public function viewPagoLinea()
@@ -51,7 +50,6 @@ class PagosEnLineaController extends Controller
             'plugins/datatables/responsive.bootstrap4.min.js',
 			'plugins/datatables/dataTables.rowGroup.min.js',
 			'plugins/datatables/buttons.colVis.min.js',
-            'plugins/twbs-pagination/twbs/jquery.twbsPagination.js',
             'plugins/multicheck/jquery.multi-select.js',
             'js/js_pago_linea_inicio.js'
 		);
@@ -64,15 +62,12 @@ class PagosEnLineaController extends Controller
         'plugins/multicheck/example-styles.css'
         );
 
-        $codigo = Session::get('SESS_PERS_CONTR_CODIGO'); #'0000255';#0000255 Session::get('SESS_CODIGO_CONTRI')
-        
-        // unset($parametros);
-        // $parametros[] = array('@pfacodcontr',$codigo); #Session::get('SESS_CODIGO_CONTRI')
-        // $AllEcuenta = ejec_store_procedure_sql_sims("DBO.sp_ctacte_pagosonline_2024",$parametros);
+        $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
+        $codigo = str_pad($codigo, 10, "0", STR_PAD_LEFT);
 
-        // $contrib = Contrib::where('FACODCONTR', $codigo)->first();
+        $estadoCuentaRespository = new EstadoCuentaRespository();
+        $page_data['allEcuenta'] = $estadoCuentaRespository->getData($codigo);
 
-        $page_data['allEcuenta'] = [];
         $page_data['contribuyente'] = [];
         $page_data['titulo_principal'] = 'Pago en Línea de Tributos Predial y Arbitrios';
         $page_data['page_directory'] = 'pagalo.pago_linea';
@@ -80,7 +75,6 @@ class PagosEnLineaController extends Controller
         $page_data['page_title'] = 'Pago en línea';
         $page_data['breadcrumbone'] = 'Págalo Ancón';
         $page_data['breadcrumb'] = 'Pago en Línea de Tributos';
-        #return view('layouts.app', compact('page_data'));
         return view('index',$page_data);
     }
     public function procesarSeleccion(Request $request){
@@ -92,107 +86,30 @@ class PagosEnLineaController extends Controller
                 return response()->json(['error' => 'No se ha seleccionado ningún tributo', 'data' => null, 'code' => 400], 400);
             }
 
-            $monto = 0;
+            $monto = $request->total;
             $codigo = Session::get('SESS_CODIGO_CONTRI');
-
             $arrayInsert = [];
-            foreach($data as $key => $value){
-                $monto += is_numeric($value['TOTAL']) ? floatval($value['TOTAL']) : 0;
-
-                $DIRANEXO = trim($value['DOMICILIO_PREDIO']) ?? '';
-                $DIRANEXO = str_replace(',', '', $DIRANEXO);
-                $DIRANEXO = preg_replace('/\s+/', ' ', $DIRANEXO);
-
-                $arrayInsert[] = [
-                    'FACODCONTR' => $codigo,
-                    'FACODTRIBU' => $value['FACODTRIBU'] ?? NULL,
-                    'FADESTRIBU' => trim($value['FADESTRIBU']) ?? NULL,
-                    'FAANOTRIBU' => trim($value['FAANOTRIBU']) ?? NULL,
-                    'FAANEXO'    => trim($value['FAANEXO']) ?? NULL,
-                    'FANRORECIB' => trim($value['FANRORECIB']) ?? NULL,
-                    'FAPERIODO'  => trim($value['FAPERIODO']) ?? NULL,
-                    'FACODAREA'  => trim($value['FACODAREA']) ?? NULL,
-                    'FNIMP01'    => is_numeric($value['FNIMP01']) ? floatval($value['FNIMP01']) : 0,
-                    'FNIMP02'    => is_numeric($value['FNIMP02']) ? floatval($value['FNIMP02']) : 0,
-                    'FNIMP03'    => is_numeric($value['FNIMP03']) ? floatval($value['FNIMP03']) : 0,
-                    'FNIMP04'    => is_numeric($value['FNIMP04']) ? floatval($value['FNIMP04']) : 0,
-                    'FNIMP05'    => is_numeric($value['FNIMP05']) ? floatval($value['FNIMP05']) : 0,
-                    'FNGASADMIN' => is_numeric($value['FNGASADMIN']) ? floatval($value['FNGASADMIN']) : 0,
-                    'FNMORA'     => is_numeric($value['FNMORA']) ? floatval($value['FNMORA']) : 0,
-                    'FASITRECIB' => trim($value['FASITRECIB']) ?? NULL,
-                    'MARCA'      => NULL,
-                    'VNFIMP01'   => 0,
-                    'VNFIMP02'   => 0,
-                    'VNFIMP03'   => 0,
-                    'VNFIMP04'   => 0,
-                    'VNFIMP05'   => 0,
-                    'VNFGASADMIN'=> 0,
-                    'FNCOSPROCE' => is_numeric($value['COSTAS']) ? floatval($value['COSTAS']) : 0,
-                    'VNFCOSPROCE'=> 0,
-                    'DIRANEXO'   => $DIRANEXO ?? '',
-                    'FECVENC'    => trim($value['FECVENC']),
-                    'MONTO'      => is_numeric($value['TOTAL']) ? floatval($value['TOTAL']) : 0,
-                    'DESCUENTO'  => 0,
-                    'TOTAL'      => is_numeric($value['TOTAL']) ? floatval($value['TOTAL']) : 0,
-                    'FEC_OPERACION' => date('Y-m-d H:i:s'),
-                ];
-            }
             
             #$monto = str_replace(',', '', $monto);
             #NIUBIZ
-            $purchaseNumber = $this->visaServiceOnline->generatePurchaseNumber().'3'; #pagotributo;
+            $purchaseNumber = $this->visaServiceOnline->generatePurchaseNumber().'1'; #pagotributo;
             #FIN
-        
-            
             DB::beginTransaction();
 
-            $checkout = new PagosLineaCheckout();
-            $checkout->FAMONTO = $monto;
-            $checkout->FANROOPERACION = $purchaseNumber;
-            #$checkout->FATOKEN = $token;
-            $checkout->FACODCONTR = $codigo;
-            $checkout->FARESPUESTAPAGO = 'PENDIENTE';
-            $checkout->FAREQUESTPAGO = $request->FAREQUESTPAGO;
-            $checkout->save();
-            
-            //NRO_OPERACION a $arrayInsert
-            foreach($arrayInsert as $key => $value){
-                $arrayInsert[$key]['NRO_OPERACION'] = $purchaseNumber;
-                $arrayInsert[$key]['FACODCHECKOUT'] = $checkout->FACODCHECKOUT;
-            }
-
-            $columnsCount = 39; 
-            $maxParameters = 2100;
-            $batchSize = intdiv($maxParameters, $columnsCount);
-
-            foreach (array_chunk($arrayInsert, $batchSize) as $batch) {
-                $ctaCte = new PagosLineaCtaCte();
-                $ctaCte->insert($batch);
-            }
+            $response = new Response();
+            $response->PURCHASENUMBER = $purchaseNumber;
+            $response->AMOUNT = $monto;
+            $response->JSON_PROCESO = json_encode($data);
+            $response->FECH_ING = date('Y-m-d H:i:s');
+            $response->save();
 
             DB::commit();
 
-
-            //APLICAR DESCUENTO
-            unset($parametros);
-            $parametros[] = array('@PFACODCHECKOUT',$checkout->FACODCHECKOUT);
-            $parametros[] = array('@PNRO_OPERACION',$purchaseNumber);
-            $parametros[] = array('@PFACODCONTR',$codigo);
-            $dataDescuento = ejec_store_procedure_sql_sims("DBO.SP_PAGOS_ONLINE_DESCUENTO",$parametros);
-
-            $total = 0;
-            foreach($dataDescuento as $datas){
-                $total += floatval($datas->TOTAL);
-            }
-            $total = number_format($total, 2, '.', '');
-            $checkout->FAMONTO = $total;
-            $checkout->save();
-
             return response()->json([
                 'success' => 'Pago registrado correctamente', 
-                'data' => $dataDescuento, 
-                'codCheckout' => $checkout->FACODCHECKOUT,
-                'amount'=>$total,
+                'data' => $data, 
+                'codCheckout' => $response->PURCHASENUMBER,
+                'amount'=>$monto,
                 'nro_operacion'=>$purchaseNumber,
                 'purchasenumber'=>$purchaseNumber,
                 'code' => 200
@@ -210,52 +127,36 @@ class PagosEnLineaController extends Controller
         $FACODCHECKOUT = $request->codCheckout;
         $purchaseNumber = $request->purchasenumber;
         $total = $request->amount;
-        try {
-            //APLICAR VALIDACIONES
-            unset($parametros);
-            $parametros[] = array('@PFACODCHECKOUT',$FACODCHECKOUT);
-            $parametros[] = array('@PNRO_OPERACION',$purchaseNumber);
-            $parametros[] = array('@PFACODCONTR',$codigo);
-            $dataCorrecto = ejec_store_procedure_sql_sims("DBO.SP_PAGOS_ONLINE_REVISION_2024",$parametros);
+        
+        try {            
+            $token = $this->visaServiceOnline->generateToken();
             
-            #\Log::channel('pagoonlinea')->debug('Data valida deuda: '.json_encode($dataCorrecto));
-
-            if(isset($dataCorrecto[0]->VALIDAPAGO) && $dataCorrecto[0]->VALIDAPAGO == 'S'){
-
-                $token = $this->visaServiceOnline->generateToken();
-
-                $checkout = PagosLineaCheckout::where('FACODCHECKOUT', $FACODCHECKOUT)->first();
-                $checkout->FATOKEN = $token;
-                $checkout->save();
-                
-                $sesion = $this->visaServiceOnline->generateSesion($total, $token, 
-                [
-                    'MDD4'  =>  Session::get('SESS_USUA_CORREO'),
-                    'MDD21' =>  0,
-                    'MDD32' =>  Session::get('SESS_PERS_DOCUMENTO'),
-                    'MDD75' =>  'Registrado',
-                    'MDD77' =>  intval(Session::get('SESS_DIAS'))
-                ]);
-                
-                return response()->json([
-                    'mensaje' => 'Pago registrado correctamente', 
-                    'data' => [], 
-                    'codCheckout' => $FACODCHECKOUT,
-                    'merchantid'=>$this->visaCredentialss['merchant_id'],
-                    'amount'=>$total,
-                    'nro_operacion'=>$purchaseNumber,
-                    'token'=>$token,
-                    'sessionKey'=>$sesion,
-                    'purchasenumber'=>$purchaseNumber,
-                    'channel'=>'web',
-                    'code' => 200,
-                    'pers_nombre' => Session::get('SESS_PERS_NOMBRE'),
-                    'pers_apellido' => Session::get('SESS_PERS_APATERNO'),
-                    'pers_correo' => Session::get('SESS_USUA_CORREO'),
-                ], 200);
-            }else{
-                return response()->json(['mensaje' => $dataCorrecto[0]->VALIDAPAGO ?? 'Hubo movimiento en la CUENTA, Vuelva a Marcar', 'data' => [], 'code' => 404, 'status' => false], 200);
-            }
+            $sesion = $this->visaServiceOnline->generateSesion($total, $token, 
+            [
+                'MDD4'  =>  Session::get('SESS_PERS_CORREO'),
+                'MDD21' =>  0,
+                'MDD32' =>  Session::get('SESS_PERS_DOCUMENTO'),
+                'MDD75' =>  'Registrado',
+                'MDD77' =>  intval(Session::get('SESS_DIAS'))
+            ]);
+            
+            return response()->json([
+                'mensaje' => 'Pago registrado correctamente', 
+                'data' => [], 
+                'codCheckout' => $purchaseNumber,
+                'merchantid'=>$this->visaCredentialss['merchant_id'],
+                'amount'=>$total,
+                'nro_operacion'=>$purchaseNumber,
+                'token'=>$token,
+                'sessionKey'=>$sesion,
+                'purchasenumber'=>$purchaseNumber,
+                'channel'=>'web',
+                'code' => 200,
+                'pers_nombre' => Session::get('SESS_PERS_NOMBRE'),
+                'pers_apellido' => Session::get('SESS_PERS_APATERNO'),
+                'pers_correo' => Session::get('SESS_PERS_CORREO'),
+            ], 200);
+            
         } catch (\Throwable $th) {
             return response()->json(['mensaje' => 'Error al validar la cuenta', 'data' => $th->getMessage(), 'code' => 500], 500);
         }
@@ -382,7 +283,7 @@ class PagosEnLineaController extends Controller
                                 ];
                             }
 
-                            Notification::route('mail', Session::get('SESS_USUA_CORREO'))
+                            Notification::route('mail', Session::get('SESS_PERS_CORREO'))
                                 ->notify((new ReciboNotification(json_encode($dataJson), $pdfOutputs))->delay(now()->addMinute(1)));
 
                             $page_data['page_name'] = 'recibo';
@@ -402,7 +303,7 @@ class PagosEnLineaController extends Controller
 
                     } catch (\Throwable $th) {
 
-                        Notification::route('mail', Session::get('SESS_USUA_CORREO'))
+                        Notification::route('mail', Session::get('SESS_PERS_CORREO'))
                         ->notify((new ReciboNotification(json_encode($dataJson), []))->delay(now()->addMinute(1)));
 
                         $page_data['page_name'] = 'recibo';
