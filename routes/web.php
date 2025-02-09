@@ -18,6 +18,7 @@ use App\Http\Controllers\Contribuyente\ContribuyenteController;
 use App\Http\Controllers\Seguridad\UsuariosController;
 
 #Route::get('/', [InicioController::class, 'index'])->name('inicio');
+#Route::get('/{any}', [LoginController::class, 'index']);
 Route::get('inicio', [InicioController::class, 'redirectToInicio'])->name('inicio');
 
 // Rutas de autenticación
@@ -84,8 +85,6 @@ Route::middleware(['session.check'])->group(function () {
 
     Route::post('pago-linea/valida-cuenta', [PagosEnLineaController::class, 'validarCuentaParaPago']);
     Route::post('pago-linea/procesar', [PagosEnLineaController::class, 'procesarSeleccion'])->name('procesar-seleccion');
-    Route::post('pago-linea/validar-contribuyente', [PagosEnLineaController::class, 'validarContribuyente'])->name('validar-contribuyente');
-    Route::post('pago-linea/confirmar-contribuyente', [PagosEnLineaController::class, 'confirmarContribuyente'])->name('confirmar-contribuyente');
 
     Route::get('pagalo/estado-de-cuenta', [EstadoCuentaController::class, 'viewEcuenta'])->name('estado-de-cuenta');
     Route::get('pagalo/get-ecuenta', [EstadoCuentaController::class, 'getEcuenta'])->name('get-ecuenta');
@@ -101,13 +100,6 @@ Route::middleware(['session.check'])->group(function () {
     Route::prefix('reportes-online')->group(function () {
         Route::get('reporte-canchas', [ReporteOnlineController::class, 'selectCanchas'])->name('reporte-online.canchas');
         Route::get('reporte-talleres', [ReporteOnlineController::class, 'selectTalleres'])->name('reporte-online.talleres');
-    });
-});
-
-Route::middleware(['session.check'])->group(function () {
-    Route::prefix('notificaciones')->group(function () {
-        Route::get('bandeja', [NotificacionesBandejaController::class, 'index']);
-        Route::get('select-bandeja', [NotificacionesBandejaController::class, 'selectBandeja']);
     });
 });
 

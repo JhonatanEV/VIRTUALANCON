@@ -11,18 +11,16 @@ let totalCoac = 0;
 
 $(document).ready(function () {
     dataCta = JSON.parse(localStorage.getItem("deuda"));
-    //dataArb = JSON.parse(localStorage.getItem("deuda_arb"));
-    //dataCoac = JSON.parse(localStorage.getItem("deuda_coac"));
 
-    let anios_unicos = dataCta.map((item) => item.cperanio).filter((value, index, self) => self.indexOf(value) === index);
+    let anios_unicos = dataCta.map((item) => item.anio).filter((value, index, self) => self.indexOf(value) === index);
     anios_unicos.sort((a, b) => b - a);
 
-    let anexos = Object.values(dataCta).map(item => item.cidpred).filter((value, index, self) => self.indexOf(value) === index); 
+    let anexos = Object.values(dataCta).map(item => item.nom_tributo).filter((value, index, self) => self.indexOf(value) === index); 
     anexos.sort((a, b) => b - a);
-
-    let htmlanexos = `<option value="1">Impuesto Predial</option>`;
+    // console.log(anexos);
+    let htmlanexos = `<option value="IMPUESTO PREDIAL">Impuesto Predial</option>`;
     anexos.forEach((anexo) => {
-        if(anexo!='0000'){
+        if(anexo!='IMPUESTO PREDIAL'){
             htmlanexos += `<option value="${anexo}">Anexo ${anexo}</option>`;
         }
     });
@@ -92,18 +90,9 @@ $(document).ready(function () {
     
     
     /********************************************MONTO TOTAL PARA BOTON ACCESO DIRECTO **************************************/
-    var totalCoactivo = 0;
-    dataCoac = dataCta.filter(function (item) {
-        return item.ESTADO_DEUDA == 'C';
-    });
-    totalCoactivo = dataCoac.reduce(function (a, b) {
-        return a + parseFloat(b.total);
-    }, 0);
-
-
     var totalVencidos = 0;
     var dataVencidos = dataCta.filter(function (item) {
-        return moment(item.dfecven).isBefore(moment());
+        return moment(item.fecha_vencimiento).isBefore(moment());
     });
 
     totalVencidos = dataVencidos.reduce(function (a, b) {
@@ -115,8 +104,6 @@ $(document).ready(function () {
         return a + parseFloat(b.total);
     }, 0);
 
-    actualizarTotalYMostrarBoton(totalCoactivo, "#txtTotalPagarCOAC", "#btn-pagar-coac");
-    
     actualizarTotalYMostrarBoton(totalVencidos, "#txtTotalPagarVenc", "#btn-pagar-venc");
     actualizarTotalYMostrarBoton(totalGeneral, "#txtTotalPagarTodo", "#btn-pagar-todo");
 
@@ -205,7 +192,6 @@ $(document).ready(function () {
 
             showMessage('success','Excelente, se acaba de agregar el monto total a pagar','Correcto');
             $("label[for='btn-pagar-venc']").addClass("disabled");
-            $("label[for='btn-pagar-coac']").addClass("disabled");
 
             listarDeudaSeleccionada();
         }else{
@@ -222,51 +208,11 @@ $(document).ready(function () {
             showMessage('success','Excelente, se acaba de quitar el monto total a pagar','Correcto');
 
             $("label[for='btn-pagar-venc']").removeClass("disabled");
-            $("label[for='btn-pagar-coac']").removeClass("disabled");
 
             listarDeudaSeleccionada();
         }
 
         
-    });
-
-
-    $("#btn-pagar-coac").on("click", function () {
-        if($(this).is(":checked")){
-           //buscar key de coactivo en dataCoac y agregar a dataSelected
-            dataCoac.forEach(function (tributo) {
-                dataSelected.push(tributo);
-            });
-            //marcar checks de coactivo
-            function marcarChecks(table) {
-                var rows = table.rows().nodes();
-                $('input[type="checkbox"]', rows).each(function () {
-                    let codigoUnico = $(this).attr("codigo");
-                    if (dataCoac.some(tributo => tributo.llave == codigoUnico)) {
-                        $(this).prop("checked", true).closest('tr').addClass("selected");
-                    }
-                });
-            }
-            marcarChecks(tableImpuesto);
-            showMessage('success','Excelente, se acaba de agregar el monto total de Coactivo','Correcto');
-            listarDeudaSeleccionada();
-        }else{
-            dataCoac.forEach(function (tributo) {
-                buscarCtaQuitar(tributo.llave);
-            });
-            function desmarcarChecks(table) {
-                var rows = table.rows().nodes();
-                $('input[type="checkbox"]', rows).each(function () {
-                    let codigoUnico = $(this).attr("codigo");
-                    if (dataCoac.some(tributo => tributo.llave == codigoUnico)) {
-                        $(this).prop("checked", false).closest('tr').removeClass("selected");
-                    }
-                });
-            }
-            desmarcarChecks(tableImpuesto);
-            showMessage('success','Excelente, se acaba de quitar el monto total de Coactivo','Correcto');
-            listarDeudaSeleccionada();
-        }
     });
 
     $("#btn-pagar-venc").on("click", function () {
@@ -323,29 +269,24 @@ function listarDeudaSeleccionada() {
     
     let dataAgrupada = dataSelected.reduce((acc, curr) => {
         // Inicializa el grupo si no existe
-        if (!acc[curr.vdescri]) {
-            acc[curr.vdescri] = { 
+        if (!acc[curr.nom_tributo]) {
+            acc[curr.nom_tributo] = { 
                 tipo: '',
                 total: 0, 
                 coactivo: 0,
                 data: []
             };
         }
-        if(curr.ctiping == '0000000273'){
+        if(curr.abrev_tributo == 'IP'){
             dataSelectedIp.push(curr);
-        }else if(curr.ctiping == '0000000278'){
+        }else if(curr.abrev_tributo == 'ARBITRIOS'){
             dataSelectedArb.push(curr);
         }
-        // Suma el TOTAL al total de vdescri
-        acc[curr.vdescri].total += parseFloat(curr.total);
+        // Suma el TOTAL al total de nom_tributo
+        acc[curr.nom_tributo].total += parseFloat(curr.total);
         
-        acc[curr.vdescri].tipo = curr.ctiping;
-        acc[curr.vdescri].data.push(curr);
-
-        // Si fasitrecib es 'E' o 'T', acumula en coactivo
-        if (curr.fasitrecib === 'E' || curr.fasitrecib === 'T') {
-            acc[curr.vdescri].coactivo += parseFloat(curr.total);
-        }
+        acc[curr.nom_tributo].tipo = curr.cod_tributo;
+        acc[curr.nom_tributo].data.push(curr);
     
         return acc;
     }, {});
@@ -471,16 +412,16 @@ async function procesarSeleccion(){
             let tributodetalle = '';
             dataArray.forEach(function (tributo) {
 
-                if(tributo.ctiping == '0000000278'){
-                    tributodetalle = tributo.vdescri;
+                if(tributo.abrev_tributo == 'IP'){
+                    tributodetalle = tributo.nom_tributo;
                 }else{
-                    tributodetalle = 'ANEXO: '+tributo.cidpred+' - '+tributo.vdescri;
+                    tributodetalle = 'ANEXO: '+tributo.cod_pred+' - '+tributo.nom_tributo;
                 }
 
                 html += "<tr>";
                 html += "<td class='white-space'>" + tributodetalle + "</td>";
-                html += "<td>" + tributo.cperanio + "</td>";
-                html += "<td>" + tributo.cperiod + "</td>";
+                html += "<td>" + tributo.anio + "</td>";
+                html += "<td>" + tributo.cod_pred + "</td>";
                 html += "<td class='text-end'>" + number_format(tributo.total ?? 0,2) + "</td>";
                 html += "<td class='text-end'>" + number_format(0,2) + "</td>";
                 html += "<td class='text-end'>" + number_format(tributo.total,2) + "</td>";
@@ -581,7 +522,7 @@ function OpenPago(gtpasarela) {
         amount:gtpasarela.amount,
         expirationminutes:'15',
         timeouturl:'/',
-        merchantlogo:'https://virtual.muniancon.gob.pe/assets/images/logo-dark.png',
+        merchantlogo:'https://i.ibb.co/HLXDd00Q/logo-dark.png',
         // formbuttoncolor:'#000000',
         action:urljs+"pago-linea/finalizar-pago/"+gtpasarela.nro_operacion+"?_token="+csrfToken+"&amount="+gtpasarela.amount+"&purchasenumber="+gtpasarela.purchasenumber+"&codCheckout="+gtpasarela.codCheckout,
         usertoken:gtpasarela.token,

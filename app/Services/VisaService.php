@@ -13,7 +13,6 @@ class VisaService
     }
 
     function generateToken() {
-
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_URL => $this->visaCredentials['url_security'],

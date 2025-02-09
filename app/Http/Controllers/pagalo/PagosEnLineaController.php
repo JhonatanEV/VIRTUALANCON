@@ -1,11 +1,9 @@
 <?php
 namespace App\Http\Controllers\pagalo;
+
+use App\Helpers\NiubizHelper;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\pagalo\Models\Contrib;
-use App\Http\Controllers\pagalo\Models\PagosLineaCheckout;
-use App\Http\Controllers\pagalo\Models\PagosLineaCtaCte;
-use App\Http\Controllers\pagalo\Models\IngCaja;
+use App\Http\Controllers\Titania\Models\Contribuyente;
 use App\Models\General\Persona;
 use App\Models\Accesos\Usuarios;
 use App\Http\Controllers\pagalo\Services\PdfReciboServices;
@@ -16,7 +14,8 @@ use Illuminate\Support\Facades\Session;
 use App\Notifications\ReciboNotification;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\pagalo\Repositories\EstadoCuentaRespository;
-use App\Http\Controllers\pagalo\Models\Response;
+use App\Http\Controllers\pagalo\Models\Response as NiubizResponse;
+use Illuminate\Support\Facades\Log;
 
 class PagosEnLineaController extends Controller
 {   
@@ -30,19 +29,6 @@ class PagosEnLineaController extends Controller
     }
     public function viewPagoLinea()
     {
-        //si no tiene codigo de contribuyente enviar a la vista de registro
-        // if(empty(Session::get('SESS_CODIGO_CONTRI'))){
-
-            
-        //     $page_data['titulo_principal'] = 'Pago en Línea de Tributos';
-        //     $page_data['page_directory'] = 'pagalo.pago_linea';
-        //     $page_data['page_name'] = 'validar_contribuyente';
-        //     $page_data['page_title'] = 'Pago en línea';
-        //     $page_data['breadcrumbone'] = 'Pago en línea';
-        //     $page_data['breadcrumb'] = 'Validar contribuyente';
-        //     return view('index',$page_data);
-        // }
-
         $page_data['header_js'] = array(
 			'plugins/datatables/jquery.dataTables.min.js',
 			'plugins/datatables/dataTables.bootstrap5.min.js',
@@ -67,8 +53,8 @@ class PagosEnLineaController extends Controller
 
         $estadoCuentaRespository = new EstadoCuentaRespository();
         $page_data['allEcuenta'] = $estadoCuentaRespository->getData($codigo);
-
-        $page_data['contribuyente'] = [];
+        
+        $page_data['contribuyente'] = Contribuyente::where('idsigma', $codigo)->first();
         $page_data['titulo_principal'] = 'Pago en Línea de Tributos Predial y Arbitrios';
         $page_data['page_directory'] = 'pagalo.pago_linea';
         $page_data['page_name'] = 'index';
@@ -96,7 +82,7 @@ class PagosEnLineaController extends Controller
             #FIN
             DB::beginTransaction();
 
-            $response = new Response();
+            $response = new NiubizResponse();
             $response->PURCHASENUMBER = $purchaseNumber;
             $response->AMOUNT = $monto;
             $response->JSON_PROCESO = json_encode($data);
@@ -127,7 +113,9 @@ class PagosEnLineaController extends Controller
         $FACODCHECKOUT = $request->codCheckout;
         $purchaseNumber = $request->purchasenumber;
         $total = $request->amount;
-        
+        $total = str_replace(',', '', $total);
+        $total = (float)number_format($total, 2, '.', '');
+
         try {            
             $token = $this->visaServiceOnline->generateToken();
             
@@ -144,7 +132,7 @@ class PagosEnLineaController extends Controller
                 'mensaje' => 'Pago registrado correctamente', 
                 'data' => [], 
                 'codCheckout' => $purchaseNumber,
-                'merchantid'=>$this->visaCredentialss['merchant_id'],
+                'merchantid'=> NiubizHelper::getCurrentCredentials()['merchant_id'],
                 'amount'=>$total,
                 'nro_operacion'=>$purchaseNumber,
                 'token'=>$token,
@@ -161,59 +149,6 @@ class PagosEnLineaController extends Controller
             return response()->json(['mensaje' => 'Error al validar la cuenta', 'data' => $th->getMessage(), 'code' => 500], 500);
         }
 
-    }
-    public function validarContribuyente(Request $request){
-        $documento = $request->documento;
-        $codigo = $request->codigo;
-        $codigo = str_pad($codigo, 7, "0", STR_PAD_LEFT);
-
-        $contrib = Contrib::where('FANRODOCUM', $documento)
-        ->where('FACODCONTR', $codigo)
-        ->where('FACODESTAD', 'AN')
-        ->first();
-
-        if($contrib){
-            
-            $data =[
-                'codigo' => $contrib->FACODCONTR,
-                'contribuyente' => trim($contrib->FANOMCONTR),
-                'documento' => trim($contrib->FANRODOCUM),
-            ];
-            return response()->json(['mensaje' => 'Contribuyente encontrado', 'data' => $data, 'code' => 200, 'status' => true], 200);
-        }else{
-            return response()->json(['mensaje' => 'Contribuyente no encontrado', 'data' => null, 'code' => 404, 'status' => false], 200);
-        }
-    }
-    public function confirmarContribuyente(Request $request){
-        $documento = $request->documento;
-        #$codigo = $request->codigo;
-        #$codigo = str_pad($codigo, 7, "0", STR_PAD_LEFT);
-
-        $contrib = Contrib::where('FANRODOCUM', $documento)
-        //->where('FACODCONTR', $codigo)
-        ->where('FACODESTAD', 'AN')
-        ->first();
-
-        if($contrib){
-        
-            $persona = Persona::where('PERS_CODIGO', Session::get('SESS_PERS_CODIGO'))->first();
-            $persona->PERS_CONTR_CODIGO = $contrib->FACODCONTR;
-            $persona->save();
-
-            $usuario = Usuarios::where('USUA_CODIGO', Session::get('SESS_USUA_CODIGO'))->first();
-            $usuario->PERF_CODIGO = 2; #contribuyente
-            $usuario->save();
-
-            Session::put('SESS_CODIGO_CONTRI', $contrib->FACODCONTR);
-            Session::put('SESS_PERF_CODIGO', 2);
-
-            $otroControlador = new LoginController();
-            $navbar = $otroControlador->navbar2();
-
-            return response()->json(['mensaje' => 'Contribuyente asignado', 'data' => $contrib, 'code' => 200, 'status' => true], 200);
-        }else{
-            return response()->json(['mensaje' => 'Contribuyente no encontrado', 'data' => null, 'code' => 404, 'status' => false], 200);
-        }
     }
 
     public function finalizarPago(Request $request, $codigo){
@@ -241,87 +176,63 @@ class PagosEnLineaController extends Controller
                 $ACTION_CODE = $data->dataMap->ACTION_CODE; #: "000",
                 $codigo = Session::get('SESS_CODIGO_CONTRI');
 
-                $dataJson = $data->dataMap;
-
-                \Log::channel('pagoonlinea')->debug('Data Exitoso: '.json_encode($dataJson));
+                $transactionData = $this->visaServiceOnline->extractTransactionData($data);
+                $NiubizResponse = NiubizResponse::where('PURCHASENUMBER', $transactionData['PURCHASENUMBER'])->firstOrFail();
+                $NiubizResponse->ACTION_CODE = $transactionData['ACTION_CODE'];
+                $NiubizResponse->TRANSACTION_ID = $transactionData['TRANSACTION_ID'];
+                $NiubizResponse->TRANSACTIONDATE = $transactionData['TRANSACTION_DATE'];
+                $NiubizResponse->JSON_NIUBIZ = json_encode($data);
+                $NiubizResponse->STATUS = $transactionData['STATUS'];
+                $NiubizResponse->AMOUNT = floatval($transactionData['AMOUNT']) ?? 0;
+                $NiubizResponse->save();
 
                 if($ACTION_CODE=='000'):
 
-                    $TRANSACTION_DATE = $dataJson->TRANSACTION_DATE ?? '';
-                    $TRANSACTION_DATE = $TRANSACTION_DATE[4].$TRANSACTION_DATE[5]."/".$TRANSACTION_DATE[2].$TRANSACTION_DATE[3]."/".$TRANSACTION_DATE[0].$TRANSACTION_DATE[1]." ".$TRANSACTION_DATE[6].$TRANSACTION_DATE[7].":".$TRANSACTION_DATE[8].$TRANSACTION_DATE[9].":".$TRANSACTION_DATE[10].$TRANSACTION_DATE[11];
-                    $dataJson->PURCHASENUMBER = $purchasenumber;
-                    $dataJson->TRANSACTION_DATE = $TRANSACTION_DATE;
-                    
-                    $checkout = PagosLineaCheckout::where('FACODCHECKOUT', $codCheckout)->first();
-                    $checkout->FARESPUESTAPAGO = 'COMPLETADO';
-                    $checkout->FAREQUESTPAGO = json_encode($dataJson);
-                    $checkout->save();
+                    $contribuyente = Contribuyente::where('idsigma', $codigo)->first();
 
-                    #Generamos recibo en SIMS
-                    
                     try {
-                        unset($parametros);
-                        $parametros[] = array('@pFACODCHECKOUT',$codCheckout);
-                        $parametros[] = array('@pFaoperacion',$purchasenumber);
-                        $parametros[] = array('@pfacodcontr',$codigo);
-                        $resRecibo = ejec_store_procedure_sql_sims("DBO.sp_pagoslinea_cancela_2024",$parametros);
-
-                        #\Log::channel('pagoonlinea')->debug('Recibo Store PagoOnline: '.json_encode($resRecibo));
-
+                        $params = [
+                            'codigo' => $codigo,
+                            'contribuyente' => $contribuyente,
+                            'transactionData' => $transactionData,
+                            'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
+                        ];
+                        try {
+                                $reciboResponse = $this->generarPago($params);
+                                $recibo = $reciboResponse->getData();
+                                Log::info('recibo: '.json_encode($recibo));
+                                
+                                $transactionData['NRO_PEDIDO'] = $recibo['emitido'] ?? '000000';
+                        } catch (\Throwable $th) {
+                            Log::error('Error al generar recibo: '.$th->getMessage());
+                        }
                         $page_data['page_directory'] = 'pagalo.pago_linea';
                         $page_data['page_title'] = 'Pago en línea';
                         $page_data['breadcrumbone'] = 'Págalo';
 
-                        if(isset($resRecibo[0]->resultado) && $resRecibo[0]->resultado == 1):
+                        Notification::route('mail', Session::get('SESS_PERS_CORREO'))
+                                ->notify((new ReciboNotification(json_encode($transactionData), $pdfOutputs = []))->delay(now()->addMinute(1)));
 
-                            $pdfOutputs = [];
-                            foreach ($resRecibo as $recibo) {
-                                $pdfOutput = $this->pdfService->generateRecibo($recibo->FANROOPERA, 'S');
-                                $pdfOutputs[] = [
-                                    'content' => $pdfOutput,
-                                    'filename' => 'recibo_' . $recibo->FANROOPERA . '.pdf'
-                                ];
-                            }
-
-                            Notification::route('mail', Session::get('SESS_PERS_CORREO'))
-                                ->notify((new ReciboNotification(json_encode($dataJson), $pdfOutputs))->delay(now()->addMinute(1)));
-
-                            $page_data['page_name'] = 'recibo';
-                            $page_data['breadcrumb'] = 'Pago realizado correctamente';
-                            $page_data['jsonData'] = json_encode($dataJson);
-                            return view('index',$page_data);
-                            
-                        else:
-                            
-                            \Log::channel('pagoonlinea')->debug('Recibo No generado: '.json_encode($resRecibo));
-
-                            $page_data['page_name'] = 'error_recibo';
-                            $page_data['breadcrumb'] = 'Error al realizar el pago';
-                            $page_data['jsonData'] = json_encode($dataJson);
-                            return view('index',$page_data);
-                        endif;
+                        $page_data['page_name'] = 'recibo';
+                        $page_data['breadcrumb'] = 'Pago realizado correctamente';
+                        $page_data['jsonData'] = json_encode($transactionData);
+                        return view('index',$page_data);
 
                     } catch (\Throwable $th) {
 
                         Notification::route('mail', Session::get('SESS_PERS_CORREO'))
-                        ->notify((new ReciboNotification(json_encode($dataJson), []))->delay(now()->addMinute(1)));
+                        ->notify((new ReciboNotification(json_encode($transactionData), []))->delay(now()->addMinute(1)));
 
                         $page_data['page_name'] = 'recibo';
                         $page_data['breadcrumb'] = 'Pago realizado correctamente';
-                        $page_data['jsonData'] = json_encode($dataJson);
+                        $page_data['jsonData'] = json_encode($transactionData);
                         return view('index',$page_data);
 
-
-                        \Log::channel('pagoonlinea')->debug('Error Recibo PagoOnline: '.json_encode($th->getMessage()));
                     }
                     
                 else:
-                    $checkout = PagosLineaCheckout::where('FACODCHECKOUT', $codCheckout)->first();
-                    $checkout->FARESPUESTAPAGO = 'RECHAZADO';
-                    $checkout->FAREQUESTPAGO = json_encode($data);
-                    $checkout->save();
                     
-                    \Log::channel('pagoonlinea')->debug('Data Rechazado: '.json_encode($dataJson));
+                    Log::channel('pagoonlinea')->debug('Data Rechazado: '.json_encode($transactionData));
 
                     $page_data['page_directory'] = 'pagalo.pago_linea';
                     $page_data['page_name'] = 'error_pago';
@@ -336,12 +247,7 @@ class PagosEnLineaController extends Controller
                 if(isset($data->data)):
                     $dataJson = $data->data;
 
-                    \Log::channel('pagoonlinea')->debug('Data Error Tarjeta: '.json_encode($dataJson));
-
-                    $checkout = PagosLineaCheckout::where('FACODCHECKOUT', $codCheckout)->first();
-                    $checkout->FARESPUESTAPAGO = 'RECHAZADO';
-                    $checkout->FAREQUESTPAGO = json_encode($dataJson);
-                    $checkout->save();
+                    Log::channel('pagoonlinea')->debug('Data Error Tarjeta: '.json_encode($dataJson));
 
                     $page_data['page_directory'] = 'pagalo.pago_linea';
                     $page_data['page_name'] = 'error_pago';
@@ -367,6 +273,14 @@ class PagosEnLineaController extends Controller
         } catch (\Throwable $th) {
             return response()->json(['error' => 'Error al registrar el pago', 'data' => $th->getMessage(), 'code' => 500], 500);
         }
+    }
+    public function generarPago($params){
+        $codigo = $params['codigo'];
+        $contribuyente = $params['contribuyente'];
+        $transactionData = $params['transactionData'];
+        $json = $params['json'];
+
+        return response()->json(['emitido' => '0000000'], 200);
     }
 
     public function viewMisRecibos(){

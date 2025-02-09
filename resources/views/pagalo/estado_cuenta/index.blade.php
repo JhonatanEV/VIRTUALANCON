@@ -68,7 +68,7 @@
                     <div class="accordion-body">
                         <div class="row" id="html-tabla-ecuenta">
                         <table id="row_callback" class="table table-sm table-striped table-bordered dt-responsive nowrap">
-                            <thead class="bg-muni">
+                            <thead class="bg-primary">
                                 <tr>
                                     <th class="text-center fw-bold text-white">TRIBUTO</th>
                                     <th class="text-center fw-bold text-white">AÑO</th>
@@ -133,7 +133,7 @@
 <div class="modal fade" id="ModalPrint" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-muni p-1">
+            <div class="modal-header bg-primary p-1">
                 <h6 class="modal-title m-0 text-white">Estado de cuenta</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

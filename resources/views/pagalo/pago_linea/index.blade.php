@@ -25,12 +25,6 @@
             <label class="btn btn-outline-primary btn-lg btn-acceso fw-bold me-2" for="btn-pagar-venc">
                 <i class="me-2">👉</i>Pagar deuda vencida predial / arbitrios <strong id="txtTotalPagarVenc">S/. 00.00</strong>
             </label>
-            
-            <input type="checkbox" class="btn-check" id="btn-pagar-coac" autocomplete="off">
-            <label class="btn btn-outline-beanred btn-lg btn-acceso fw-bold" for="btn-pagar-coac">
-                <i class="me-2">👉</i>Pagar Todo Coactivo <strong id="txtTotalPagarCOAC">S/. 00.00</strong>
-            </label>
-
         </div>
         <div class="alert alert-warning alert-dismissible fade show border-0 mb-0" role="alert">
             <strong>Nota!</strong>  Para acogerse a beneficio vigente, selecciona la deuda a pagar y continua con el proceso. En resumen, de su pago se visualizará los descuentos vigentes
@@ -40,7 +34,7 @@
     <div class="col-md-8 contenedor-primero">
         <div class="card border-0">
             <div class="card-header">
-                <h4 class="card-title">Hola, <b>{{ trim($contribuyente->FANOMCONTR ?? '') }}</b> con codigo <b>{{ $contribuyente->FACODCONTR ?? ''}}</b></h4>
+                <h4 class="card-title">Hola, <b>{{ trim($contribuyente->vnombre ?? '') }}</b> con codigo <b>{{ $contribuyente->idsigma ?? ''}}</b></h4>
                 <p class="text-muted mb-0">Seleccione tipos de tributo para ver su deuda pendiente a pagar.</p>
             </div>
             <div class="card-body p-0">
@@ -83,30 +77,30 @@
                         <tbody>
                             @foreach($allEcuenta as $ecuenta)
                             <tr>
-                                <td class="dtr-control">{{ $ecuenta->vdescri }}</td>
-                                <td class="text-end">{{ $ecuenta->cperanio }}</td>
-                                <td class="text-end">{{ $ecuenta->cperiod }}</td>
-                                <td class="text-end">{{ \Carbon\Carbon::parse($ecuenta->dfecven)->format('d/m/Y') }}</td>
-                                <td class="text-end fw-bold">PENDIENTE</td>
-                                <td class="text-end">{{ number_format($ecuenta->saldo_fijo,2) }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->reajuste,2) }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->costo_emis,2) }}</td>
-                                <td class="text-end">{{ number_format($ecuenta->mora,2) }}</td>
-                                <td class="text-end total-pie-tabla">{{ number_format($ecuenta->total,2) }}</td>
-                                <td>{{ $ecuenta->cidpred }}</td>
-                                <td class="text-end">SITUACION</td>
+                                <td class="dtr-control">{{ $ecuenta['nom_tributo'] }}</td>
+                                <td class="text-end">{{ $ecuenta['anio'] }}</td>
+                                <td class="text-end">{{ $ecuenta['periodo'] }}</td>
+                                <td class="text-end">{{ \Carbon\Carbon::parse($ecuenta['fecha_vencimiento'])->format('d/m/Y') }}</td>
+                                <td class="text-end fw-bold">{{ $ecuenta['estado'] }}</td>
+                                <td class="text-end">{{ number_format($ecuenta['imp_insol'],2) }}</td>
+                                <td class="text-end">{{ number_format($ecuenta['reajuste'],2) }}</td>
+                                <td class="text-end">{{ number_format($ecuenta['costo_emis'],2) }}</td>
+                                <td class="text-end">{{ number_format($ecuenta['mora'],2) }}</td>
+                                <td class="text-end total-pie-tabla">{{ number_format($ecuenta['total'],2) }}</td>
+                                <td>{{ $ecuenta['nom_tributo'] }}</td>
+                                <td class="text-end">{{ $ecuenta['situacion'] }}</td>
                                 <td class="text-center">
                                     <div class="col-md">
                                         <input 
                                         type="checkbox" 
                                         class="form-check-input font-24 mis-tributos" 
                                         name="recibo[]" 
-                                        id="recibo{{ $ecuenta->llave }}" 
+                                        id="recibo{{ $ecuenta['llave'] }}" 
                                         autocomplete="off" 
-                                        precio-trib="{{ $ecuenta->total }}"
-                                        codigo="{{ $ecuenta->llave }}"
+                                        precio-trib="{{ $ecuenta['total'] }}"
+                                        codigo="{{ $ecuenta['llave'] }}"
                                         value="1">
-                                        {{-- <label class="btn btn-outline-info btn-sm text-white" for="recibo{{ $llave }}">
+                                        {{-- <label class="btn btn-outline-info btn-sm text-white" for="recibo{{ $ecuenta['llave'] }}">
                                             <i class="fas fa-check"></i>
                                         </label> --}}
                                     </div>
@@ -188,17 +182,20 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div class="col-sm-4 mt-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" value="" id="chkAutorizo" checked>
-                                            <label class="form-check-label" for="chkAutorizo">
-                                                Acepto <a href="https://virtual.muniancon.gob.pe/terminos-y-condiciones" class="text-primary" target="_blank">Términos y condiciones</a>
-                                            </label>
+                                    <div class="col-lg-4 mt-4">
+                                        <div class="bg-light p-4 rounded shadow-sm">
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="checkbox" id="chkAutorizo" checked>
+                                                <label class="form-check-label" for="chkAutorizo">
+                                                    Acepto <a href="./terminos-y-condiciones" class="text-primary" target="_blank">Términos y condiciones</a>
+                                                </label>
+                                            </div>
+                                            <h5 class="text-secondary">Monto Total a Pagar</h5>
+                                            <h3 class="text-danger fw-bold MontoSeleccionado">S/ 0.00</h3>
+                                            <button type="button" class="btn btn-success btn-lg w-100 mt-3" id="btnPagarDeuda">
+                                                <i class="far fa-credit-card me-2"></i> Pagar
+                                            </button>
                                         </div>
-                                        <!-- <h5 class="card-title">Monto Total a Pagar</h5> -->
-                                        <h3 class="card-text text-danger fw-bolder MontoSeleccionado">S/ 0.00</h3>
-                                        <button type="button" class="btn btn-success btn-lg mt-3" id="btnPagarDeuda"><i class="far fa-credit-card me-2"></i>Pagar</button>
-
                                     </div>
                                 </div>
                             </div>
@@ -212,7 +209,10 @@
         </div>
     </div>
 </div>
-<script src="https://static-content.vnforapps.com/v2/js/checkout.js"></script>
+
+
+<!-- <script src="https://static-content.vnforapps.com/v2/js/checkout.js"></script> -->
+<script src="https://static-content-qas.vnforapps.com/v2/js/checkout.js?qa=true"></script>
 <script>
     $(document).ready(function() {
         let allaEcuenta = @json($allEcuenta);

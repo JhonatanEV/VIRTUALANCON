@@ -1,6 +1,6 @@
 <?php
 return [
-    'development' => env('VISA_ENVIRONMENT', true),
+    'development' => env('NIUBIZ_DEVELOPER', true),
 
     'credentials' => [
         'development' => [

@@ -1,10 +1,11 @@
 <?php
 namespace App\Http\Controllers\pagalo;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\pagalo\Repositories\EstadoCuentaRespository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
-
+use App\Http\Controllers\Pagalo\Resources\CuentaResource;
 class EstadoCuentaController extends Controller
 {   
     public function __construct()
@@ -45,50 +46,24 @@ class EstadoCuentaController extends Controller
     }
     public function getEcuenta(Request $request)
     {
-        /*
-            execute DBO.SP_RENTAS_LISTADO_CTACTE   
-            @lsp_facodcontr = '0119439', 
-            @lsp_facodtribu = '', 
-            @lsp_faanotribui = '1995', 
-            @lsp_faanotribuf = '2024',
-            @lsp_faanexoi = '0000', 
-            @lsp_faanexof = '9999', 
-            @lsp_faestrecib = 'P', 
-            @lsp_fatipo = '3', 
-            @lsp_nocon = 'SUCESION ELLIOTT DAVALOS MAXI INDALECIO', 
-            @lsp_notam = 'PEQUEÑO   ', 
-            @lsp_faestado = 'PENDIENTE', 
-            @ldt_fechaact = '2024-18-06 00:00:00.000'
-        */
-        #$anio_desde = $request->anno_desde;
-        #$anio_hasta = $request->anno_hasta;
-
         $anio_desde = '1995';
         $anio_hasta = date('Y');
         $codigo = Session::get('SESS_CODIGO_CONTRI');
 
         try {
         
-            #unset($parametros);
-            #$parametros[] = array('@lsp_facodcontr',$codigo);
-            #$parametros[] = array('@lsp_facodtribu','');
-            #$parametros[] = array('@lsp_faanotribui',$anio_desde);
-            #$parametros[] = array('@lsp_faanotribuf',$anio_hasta);
-            #$parametros[] = array('@lsp_faanexoi','0000');
-            #$parametros[] = array('@lsp_faanexof','9999');
-            #$parametros[] = array('@lsp_faestrecib','P');
-            #$parametros[] = array('@lsp_fatipo','3');
-            #$parametros[] = array('@lsp_nocon','');
-            #$parametros[] = array('@lsp_notam','');
-            #$parametros[] = array('@lsp_faestado','PENDIENTE');
-            #$parametros[] = array('@ldt_fechaact',date('d-m-Y H:i:s'));
-            #$arbEcuenta = ejec_store_procedure_sql_sims("DBO.SP_RENTAS_LISTADO_CTACTE",$parametros);
-            
-            unset($parametros);
-            $parametros[] = array('@pfacodcontr',$codigo);
-            $arbEcuenta = ejec_store_procedure_sql_sims("DBO.SP_CTACTE_ONLINE_2024",$parametros);
+            $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
+            $codigo = str_pad($codigo, 10, "0", STR_PAD_LEFT);
 
-            return response()->json($arbEcuenta, 200);
+            $estadoCuentaRespository = new EstadoCuentaRespository();
+            $arbEcuenta = $estadoCuentaRespository->getData($codigo);
+
+            return response()->json(
+                [
+                    'data' => $arbEcuenta,
+                    'message' => 'Estado de cuenta obtenido correctamente'
+                ]
+                , 200);
             
         } catch (\Throwable $th) {
             return response()->json($th->getMessage(), 500);

@@ -38,38 +38,29 @@ function getEcuenta(){
         fetchGet(url,function(res){
             var tableBodyEcuenta = '';
             let total_pagar = 0;
-            res.forEach(function(ecuenta){
 
-                let total = 
-                parseFloat(
-                    parseFloat(ecuenta.INSOLUTO)+
-                    parseFloat(ecuenta.FNMORA)+
-                    parseFloat(ecuenta.FNGASADMIN)+
-                    parseFloat(ecuenta.COSTAS)-
-                    parseFloat(ecuenta.DESCUENTO)
-                ).toFixed(2);
-
-                total_pagar += parseFloat(total);
+            res.data.forEach(function(ecuenta){
+                total_pagar += parseFloat(ecuenta.total);
                 let anexo_arb = '';
-                if(ecuenta.FACODTRIBU == 'IP'){
-                    anexo_arb = ecuenta.FADESTRIBU;
+                if(ecuenta.abrev_tributo == 'IP'){
+                    anexo_arb = ecuenta.nom_tributo;
                 }else{
-                    anexo_arb = ecuenta.FADESTRIBU+' '+ecuenta.DOMICILIO_PREDIO
+                    anexo_arb = ecuenta.nom_tributo+' '+ecuenta.direc_pred
                 }
 
                 tableBodyEcuenta += '<tr>';
                 tableBodyEcuenta += '<td class="dtr-control">'+anexo_arb+'</td>';
-                tableBodyEcuenta += '<td>'+ecuenta.FAANOTRIBU+'</td>';
-                tableBodyEcuenta += '<td>'+ecuenta.FANRORECIB+'</td>';
-                tableBodyEcuenta += '<td>'+ecuenta.FAPERIODO+'</td>';
-                tableBodyEcuenta += '<td>'+moment(ecuenta.FECVENC).format("DD/MM/Y")+'</td>';
-                tableBodyEcuenta += '<td>'+ecuenta.SITUACION+'</td>';
-                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.INSOLUTO,2)+'</td>';
-                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.FNMORA,2)+'</td>';
-                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.FNGASADMIN,2)+'</td>';
-                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.COSTAS,2)+'</td>';
-                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.DESCUENTO,2)+'</td>';
-                tableBodyEcuenta += '<td class="text-end">'+total+'</td>';
+                tableBodyEcuenta += '<td>'+ecuenta.anio+'</td>';
+                tableBodyEcuenta += '<td>'+ecuenta.nro_recibo+'</td>';
+                tableBodyEcuenta += '<td>'+ecuenta.periodo+'</td>';
+                tableBodyEcuenta += '<td>'+moment(ecuenta.fecha_vencimiento).format("DD/MM/Y")+'</td>';
+                tableBodyEcuenta += '<td>'+ecuenta.situacion+'</td>';
+                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.imp_insol,2)+'</td>';
+                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.mora,2)+'</td>';
+                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.gasto_admin,2)+'</td>';
+                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.costo_emis,2)+'</td>';
+                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.descuento,2)+'</td>';
+                tableBodyEcuenta += '<td class="text-end">'+number_format(ecuenta.total,2)+'</td>';
                 tableBodyEcuenta += '</tr>';
             });
             $('#tableBodyEcuenta').html(tableBodyEcuenta);

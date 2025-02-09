@@ -1,5 +1,5 @@
 table.dataTable tr.dtrg-group td {
-	background-color: #2594bf;
+	background-color: #1760fb;
 	color: #fff;
 	/* -webkit-box-shadow: 0px 2px 4px rgba(37, 37, 37, 0.25);
     box-shadow: 0px 2px 4px rgba(37, 37, 37, 0.25); */
@@ -12,7 +12,7 @@ table.dataTable tr.dtrg-group.dtrg-level-0 td {
 
 table.dataTable tr.dtrg-group.dtrg-level-1 td,
 table.dataTable tr.dtrg-group.dtrg-level-2 td {
-	background-color: #2594bf;
+	background-color: #1760fb;
 	padding-top: 0.25em;
 	padding-bottom: 0.25em;
 	padding-left: 2em;
