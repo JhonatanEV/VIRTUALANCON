@@ -73,6 +73,7 @@ class EstadoCuentaRespository
                     saldos_detalle.dfecven
                 HAVING SUM(saldos_detalle.imp_insol + saldos_detalle.costo_emis) > 0
                 AND saldos_detalle.cidpers = :cidpers
+                ORDER BY m.vobserv,saldos_detalle.cperanio,saldos_detalle.cperiod
             ", ['cidpers' => $codigo]);
 
         return $query;
