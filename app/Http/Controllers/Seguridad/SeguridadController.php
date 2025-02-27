@@ -46,7 +46,7 @@ class SeguridadController extends ApiController
             Session::put('SESS_PERF_CODIGO', $model->PERF_CODIGO);
             Session::put('SESS_PERS_CODIGO', $model->PERS_CODIGO);
             Session::put('SESS_USUA_USERNAME', $model->USUA_USERNAME);
-            Session::put('SESS_USUA_NOMBRES', $model->persona->PERS_NOMBRE);
+            Session::put('SESS_PERS_NOMBRE', $model->persona->PERS_NOMBRE);
             Session::put('SESS_NOMBRE_COMPLETO', $model->persona->PERS_NOMCOM);
             session::put('SESS_PERS_DOCUMENTO', $model->persona->PERS_DOCUMENTO);
             session::put('SESS_PERS_CONTR_CODIGO', $model->persona->PERS_CONTR_CODIGO);
@@ -56,6 +56,11 @@ class SeguridadController extends ApiController
             Session::put('SESS_PERF_NOMBRE', $model->perfil->PERF_NOMBRE);
             Session::put('SESS_USUA_CORREO', $model->USUA_CORREO);
             Session::put('SESS_ACTIVE', 1);
+            $fecha_ingreso = Carbon::parse($model->persona->PERS_FECING);
+            $fecha_actual = Carbon::now();
+            $dias = $fecha_ingreso->diffInDays($fecha_actual);
+            session::put('SESS_DIAS', $dias);
+
 
             $accesos = $this->getAccesos($model->PERF_CODIGO);
 

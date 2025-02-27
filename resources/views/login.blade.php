@@ -82,7 +82,7 @@
                                 <div class="card-body pt-0">                                    
                                     <form class="my-4" method="post" name="form1" id="form1">            
                                         <div class="form-group mb-2">
-                                            <label class="form-label" for="username">Usuario (N° Documento)</label>
+                                            <label class="form-label" for="username">Usuario (DNI/RUC)</label>
                                             <input type="number" class="form-control" id="username" name="username" placeholder="Ingrese usuario" autocomplete="off" required="">                               
                                         </div>
                                         

@@ -336,7 +336,7 @@ function showPopup(ruta,idmodal,className="",titulo="Popup"){
       contenido += `<div class="modal fade modal-class" id="${namePopup}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered ${className} " role="document">
                             <div class="modal-content">
-                                <div class="modal-header bg-muni">
+                                <div class="modal-header bg-blue">
                                     <h6 class="modal-title m-0 text-white" id="exampleModalPrimary1">${titulo}</h6>
                                     <button type="button" class="btn-close bg-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>

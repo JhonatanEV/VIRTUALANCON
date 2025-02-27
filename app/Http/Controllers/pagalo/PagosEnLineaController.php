@@ -16,9 +16,17 @@ use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\pagalo\Repositories\EstadoCuentaRespository;
 use App\Http\Controllers\pagalo\Models\Response as NiubizResponse;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\pagalo\Models\EstadoCuenta;
+use App\Http\Controllers\pagalo\Models\RegistroPago;
+use App\Http\Controllers\pagalo\Models\Dtesoreria;
+use App\Http\Controllers\pagalo\Models\Mtesoreria;
+use App\Traits\UtilsTrait;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class PagosEnLineaController extends Controller
 {   
+    use UtilsTrait;
     protected $visaServiceOnline;
     protected $visaCredentialss;
     protected $pdfService;
@@ -73,9 +81,7 @@ class PagosEnLineaController extends Controller
             }
 
             $monto = $request->total;
-            $codigo = Session::get('SESS_CODIGO_CONTRI');
-            $arrayInsert = [];
-            
+            $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
             #$monto = str_replace(',', '', $monto);
             #NIUBIZ
             $purchaseNumber = $this->visaServiceOnline->generatePurchaseNumber().'1'; #pagotributo;
@@ -85,19 +91,32 @@ class PagosEnLineaController extends Controller
             $response = new NiubizResponse();
             $response->PURCHASENUMBER = $purchaseNumber;
             $response->AMOUNT = $monto;
-            $response->JSON_PROCESO = json_encode($data);
+            #$response->JSON_PROCESO = json_encode($data);
             $response->FECH_ING = date('Y-m-d H:i:s');
             $response->save();
+
+            $codigo_operacion = '00000000000000000000';
+
+            foreach ($data as $item) {
+                // Extraer los idsigma_agrupados
+                $idsigma_agrupados = explode(',', $item['idsigma_agrupados']);
+
+                RegistroPago::whereIn('idsigma', $idsigma_agrupados)
+                    ->where('codigo_operacion', $item['codigo_operacion'])
+                    ->update(['pushernumber' => $purchaseNumber]);
+                
+                $codigo_operacion = $item['codigo_operacion'];
+            }
 
             DB::commit();
 
             return response()->json([
                 'success' => 'Pago registrado correctamente', 
                 'data' => $data, 
-                'codCheckout' => $response->PURCHASENUMBER,
-                'amount'=>$monto,
-                'nro_operacion'=>$purchaseNumber,
-                'purchasenumber'=>$purchaseNumber,
+                'codCheckout' => $codigo_operacion,
+                'amount'    => $monto,
+                'nro_operacion' => $codigo_operacion,
+                'purchasenumber'=> $purchaseNumber,
                 'code' => 200
             ], 200);
 
@@ -109,7 +128,7 @@ class PagosEnLineaController extends Controller
     }
     public function validarCuentaParaPago(Request $request){
 
-        $codigo = Session::get('SESS_CODIGO_CONTRI');
+        $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
         $FACODCHECKOUT = $request->codCheckout;
         $purchaseNumber = $request->purchasenumber;
         $total = $request->amount;
@@ -117,6 +136,35 @@ class PagosEnLineaController extends Controller
         $total = (float)number_format($total, 2, '.', '');
 
         try {            
+            
+            $params = [
+                'codigo' => $codigo,
+                'contribuyente' => '',
+                'transactionData' => [
+                    'AMOUNT' => $total,
+                    'TRANSACTION_DATE' => Carbon::now()->format('Y-m-d H:i:s'),
+                    'ACTION_CODE' => '000',
+                    'STATUS' => 'APROBADO',
+                    'TRANSACTION_ID' => '00000000000000000000',
+                    'NRO_PEDIDO' => '00000000000000000000'
+                ],
+                'codigo_operacion' => $FACODCHECKOUT,
+                'purchaseNumber' => $purchaseNumber,
+                //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
+            ];
+            try {
+                    $reciboResponse = $this->generarPago($params);
+                    
+                    Log::info('reciboResponse: '.json_encode($reciboResponse));
+
+            } catch (\Throwable $th) {
+                Log::error('Error al generar recibo 1: '.$th->getMessage());
+            }
+            
+            return response()->json(['mensaje' => 'Pago registrado correctamente', 'data' => [], 'code' => 200], 200);
+            
+            #*************************************** FIN PRUEBA ***************************************
+
             $token = $this->visaServiceOnline->generateToken();
             
             $sesion = $this->visaServiceOnline->generateSesion($total, $token, 
@@ -131,17 +179,17 @@ class PagosEnLineaController extends Controller
             return response()->json([
                 'mensaje' => 'Pago registrado correctamente', 
                 'data' => [], 
-                'codCheckout' => $purchaseNumber,
+                'codCheckout' => $FACODCHECKOUT,
                 'merchantid'=> NiubizHelper::getCurrentCredentials()['merchant_id'],
                 'amount'=>$total,
-                'nro_operacion'=>$purchaseNumber,
+                'nro_operacion'=>$FACODCHECKOUT,
                 'token'=>$token,
                 'sessionKey'=>$sesion,
                 'purchasenumber'=>$purchaseNumber,
                 'channel'=>'web',
                 'code' => 200,
-                'pers_nombre' => Session::get('SESS_PERS_NOMBRE'),
-                'pers_apellido' => Session::get('SESS_PERS_APATERNO'),
+                //'pers_nombre' => Session::get('SESS_PERS_NOMBRE'),
+                //'pers_apellido' => Session::get('SESS_PERS_APATERNO'),
                 'pers_correo' => Session::get('SESS_PERS_CORREO'),
             ], 200);
             
@@ -151,13 +199,12 @@ class PagosEnLineaController extends Controller
 
     }
 
-    public function finalizarPago(Request $request, $codigo){
+    public function finalizarPago(Request $request, $codigo_operacion){
         
         $amount = $request->amount;
         $purchasenumber = $request->purchasenumber;
         $transactionToken = $request->transactionToken;
-        $codCheckout = $request->codCheckout;
-        $amount = str_replace(',', '', $request->amount);
+        #$amount = str_replace(',', '', $request->amount);
         
         try {
             $token = $this->visaServiceOnline->generateToken();
@@ -171,12 +218,12 @@ class PagosEnLineaController extends Controller
                 $page_data['breadcrumb'] = 'Error al realizar el pago';
                 return view('index',$page_data);
             }
-            #\Log::channel('pagoonlinea')->debug('Data Json Exitoso: '.json_encode($data));
             if (isset($data->dataMap)):
                 $ACTION_CODE = $data->dataMap->ACTION_CODE; #: "000",
-                $codigo = Session::get('SESS_CODIGO_CONTRI');
+                $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
 
                 $transactionData = $this->visaServiceOnline->extractTransactionData($data);
+
                 $NiubizResponse = NiubizResponse::where('PURCHASENUMBER', $transactionData['PURCHASENUMBER'])->firstOrFail();
                 $NiubizResponse->ACTION_CODE = $transactionData['ACTION_CODE'];
                 $NiubizResponse->TRANSACTION_ID = $transactionData['TRANSACTION_ID'];
@@ -195,16 +242,22 @@ class PagosEnLineaController extends Controller
                             'codigo' => $codigo,
                             'contribuyente' => $contribuyente,
                             'transactionData' => $transactionData,
-                            'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
+                            'codigo_operacion' => $codigo_operacion,
+                            'purchaseNumber' => $purchasenumber,
+                            //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
                         ];
                         try {
                                 $reciboResponse = $this->generarPago($params);
+                                
+                                Log::info('reciboResponse: '.json_encode($reciboResponse));
+
                                 $recibo = $reciboResponse->getData();
-                                Log::info('recibo: '.json_encode($recibo));
+                                $recibo = json_decode(json_encode($recibo), true);
+                                #Log::info('recibo: '.json_encode($recibo));
                                 
                                 $transactionData['NRO_PEDIDO'] = $recibo['emitido'] ?? '000000';
                         } catch (\Throwable $th) {
-                            Log::error('Error al generar recibo: '.$th->getMessage());
+                            Log::error('Error al generar recibo 1: '.$th->getMessage());
                         }
                         $page_data['page_directory'] = 'pagalo.pago_linea';
                         $page_data['page_title'] = 'Pago en línea';
@@ -227,7 +280,6 @@ class PagosEnLineaController extends Controller
                         $page_data['breadcrumb'] = 'Pago realizado correctamente';
                         $page_data['jsonData'] = json_encode($transactionData);
                         return view('index',$page_data);
-
                     }
                     
                 else:
@@ -249,6 +301,15 @@ class PagosEnLineaController extends Controller
 
                     Log::channel('pagoonlinea')->debug('Data Error Tarjeta: '.json_encode($dataJson));
 
+                    $transactionData = $this->visaServiceOnline->extractTransactionFaild($data);
+                    $NiubizResponse = NiubizResponse::where('PURCHASENUMBER',  $purchasenumber)->firstOrFail();
+                    $NiubizResponse->ACTION_CODE = $transactionData['ACTION_CODE'];
+                    $NiubizResponse->TRANSACTIONDATE = $transactionData['TRANSACTION_DATE'];
+                    $NiubizResponse->JSON_NIUBIZ = json_encode($data);
+                    $NiubizResponse->STATUS = $transactionData['STATUS'];
+                    $NiubizResponse->AMOUNT = floatval($transactionData['AMOUNT']) ?? 0;
+                    $NiubizResponse->save();
+
                     $page_data['page_directory'] = 'pagalo.pago_linea';
                     $page_data['page_name'] = 'error_pago';
                     $page_data['page_title'] = 'Pago en línea';
@@ -266,8 +327,6 @@ class PagosEnLineaController extends Controller
                     $page_data['breadcrumb'] = 'Error al realizar el pago';
                     return view('index',$page_data);
                 endif;
-
-
             endif;
 
         } catch (\Throwable $th) {
@@ -278,9 +337,117 @@ class PagosEnLineaController extends Controller
         $codigo = $params['codigo'];
         $contribuyente = $params['contribuyente'];
         $transactionData = $params['transactionData'];
-        $json = $params['json'];
+        $codigo_operacion = $params['codigo_operacion'];
+        $purchaseNumber = $params['purchaseNumber'];
+        #$json = $params['json'];
 
-        return response()->json(['emitido' => '0000000'], 200);
+        try {
+            #$data = json_decode($json, true);
+
+            DB::beginTransaction();
+
+            #************************************* Cambiar estado de cuenta *************************************
+            $registrosPago = RegistroPago::where('codigo_operacion', $codigo_operacion)
+                ->where('pushernumber', $purchaseNumber)
+                ->where('cidpers', $codigo)
+                ->get();
+
+            if ($registrosPago->isEmpty()) {
+                throw new \Exception('No se encontraron registros en RegistroPago para actualizar.');
+            }
+
+            $fecha_pago = Carbon::now();
+            $fecha_pago = $fecha_pago->format('Y-m-d H:i:s');
+
+            $nroCaja = '0049'; #caja pagos en linea
+            $nroRecibo = 0;
+
+            $resultado = DB::select("SELECT tesoreria.obt_nro_recibo(?) AS nro_recibo", [$nroCaja]);
+            if (!empty($resultado))
+                $nroRecibo = $resultado[0]->nro_recibo;
+
+            Log::info('nroRecibo: '.$nroRecibo);
+
+            foreach ($registrosPago as $registro) {
+                EstadoCuenta::where('idsigma', $registro->idsigma)
+                    ->where('nestado', '0')
+                    ->where('cidpers', $codigo)
+                    ->update([
+                        'nestado' => '1',
+                        'dfecpag' => $fecha_pago,
+                        'vobserv' => $purchaseNumber,
+                        'fact_mora' => $registro->factor_mora_d,
+                        'imp_mora' => $registro->mora_d
+                    ]);
+
+                    #genera recibo detalle
+                    $mtesoreria = new Mtesoreria();
+                    #$mtesoreria->idsigma = $codigo;
+                    $mtesoreria->cidecta = $registro->idsigma;
+                    $mtesoreria->cnumcom = $nroRecibo;
+                    $mtesoreria->nmontot = $transactionData['AMOUNT'];
+                    $mtesoreria->dfecpag = $fecha_pago;
+                    $mtesoreria->nestado = '1';
+                    $mtesoreria->vusernm = $nroCaja;
+                    $mtesoreria->vhostnm = $this->getIpCliente();
+                    $mtesoreria->ddatetm = $fecha_pago;
+                    $mtesoreria->cidpers = $codigo;
+                    $mtesoreria->cidpred = $registro->cidpred;
+                    $mtesoreria->cperanio = $registro->cperanio;
+                    $mtesoreria->ctiprec = $registro->ctiprec;
+                    $mtesoreria->cperiod = $registro->cperiod;
+                    $mtesoreria->ncantid = 1;
+                    $mtesoreria->imp_insol = $registro->imp_insol;
+                    $mtesoreria->fact_reaj = $registro->reajuste;
+                    $mtesoreria->imp_reaj = $registro->reajuste;
+                    $mtesoreria->fact_mora = $registro->factor_mora_d;
+                    $mtesoreria->imp_mora = $registro->mora_d;
+                    $mtesoreria->costo_emis = $registro->costo_emis;
+                    $mtesoreria->vobserv = $purchaseNumber;
+                    $mtesoreria->ctippag = '1000001864';
+                    $mtesoreria->cnroope = $purchaseNumber;
+                    $mtesoreria->cidapertura = '0000000000';
+                    $mtesoreria->cnumope = $nroRecibo;
+                    $mtesoreria->save();
+            }
+
+            Log::info('Fin tabla mtesoreria');
+
+            #Elimina los registros de RegistroPago
+            RegistroPago::where('codigo_operacion', $codigo_operacion)
+                ->whereNull('pushernumber')
+                ->where('cidpers', $codigo)
+                ->delete();
+
+            Log::info('Fin tabla RegistroPago');
+            #************************************* Fin Cambiar estado de cuenta *************************************
+            #genera recibo cabecera
+            $dtesoreria = new Dtesoreria();
+            $dtesoreria->idsigma = Str::uuid();
+            $dtesoreria->cnumcom = $nroRecibo;
+            $dtesoreria->ciduser = 'PAGALO';
+            $dtesoreria->cidpers = $codigo;
+            $dtesoreria->nnroope = $purchaseNumber;
+            $dtesoreria->dfecpag = $fecha_pago;
+            $dtesoreria->dnrodoc = Session::get('SESS_PERS_DOCUMENTO');
+            $dtesoreria->ctippag = '1000001864'; #Efectivo
+            $dtesoreria->nestado = 1;
+            $dtesoreria->nmontot = $transactionData['AMOUNT'];
+            $dtesoreria->vhostnm = $this->getIpCliente();
+            $dtesoreria->vusernm = $nroCaja;
+            $dtesoreria->ddatetm = $fecha_pago;
+            $dtesoreria->cnumope = $nroRecibo;
+            $dtesoreria->save();
+        
+            Log::info('Fin tabla dtesoreria');
+            DB::commit();
+
+        } catch (\Exception $th) {
+            DB::rollBack();
+            Log::error('Error al generar recibo 2: '.$th->getMessage());
+        }
+        
+        return response()->json(['emitido' => $nroRecibo ], 200);
     }
 
     public function viewMisRecibos(){

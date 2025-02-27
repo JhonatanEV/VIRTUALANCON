@@ -25,6 +25,12 @@ class LoginController extends Controller
         return view('login',$data);
     }
 
+	public function redirectToLogin()
+	{
+		dd('redirectToLogin');
+		return redirect('login')->route('login');
+	}
+
 	public function recuperarAcceso(){
 		$data = ['page_title'=>'Recuperar acceso'];
 

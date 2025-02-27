@@ -4,12 +4,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class CuentaResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
     public function toArray($request)
     {
         return [
@@ -27,7 +21,6 @@ class CuentaResource extends JsonResource
             'fecha_calculo' => $this->fecha_calculo,
             'situacion' => $this->situacion ?? '',
             'estado' => $this->estado ?? '',
-            'llave' => trim($this->llave),
             'mora' => $this->mora,
             'reajuste' => $this->reajuste,
             'imp_insol' => $this->saldo_fijo,
@@ -35,8 +28,10 @@ class CuentaResource extends JsonResource
             'gasto_admin' => $this->gasto_admin ?? 0,
             'descuento' => $this->descuento ?? 0,
             'sub_total' => floatval($this->total),
-            'total' => floatval($this->total)
-            
+            'total' => floatval($this->total),
+            'llave' => trim($this->llave),
+            'idsigma_agrupados' => $this->idsigma_agrupados,
+            'codigo_operacion' => $this->codigo_operacion
         ];
     }
 }

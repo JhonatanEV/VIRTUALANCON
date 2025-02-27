@@ -45,7 +45,7 @@ $(document).ready(function () {
             dataSrc: [10,1],
             startRender: function (rows, group) {
                 return $("<tr/>")
-                    .append("<td colspan='9' class='text-start'><strong>" + group + "</strong></td><td style='background: none;'></td>");
+                    .append("<td colspan='9' class='text-start'><strong>" + group + "</strong></td><td style=''></td>");
             },
             endRender: function (rows, group) {
                 var total = rows
@@ -524,7 +524,7 @@ function OpenPago(gtpasarela) {
         timeouturl:'/',
         merchantlogo:'https://i.ibb.co/HLXDd00Q/logo-dark.png',
         // formbuttoncolor:'#000000',
-        action:urljs+"pago-linea/finalizar-pago/"+gtpasarela.nro_operacion+"?_token="+csrfToken+"&amount="+gtpasarela.amount+"&purchasenumber="+gtpasarela.purchasenumber+"&codCheckout="+gtpasarela.codCheckout,
+        action:urljs+"pago-linea/finalizar-pago/"+gtpasarela.nro_operacion+"?_token="+csrfToken+"&amount="+gtpasarela.amount+"&purchasenumber="+gtpasarela.purchasenumber,//+"&codCheckout="+gtpasarela.codCheckout,
         usertoken:gtpasarela.token,
         //cardholdername:gtpasarela.pers_nombre,
         //cardholderlastname:gtpasarela.pers_apellido,
