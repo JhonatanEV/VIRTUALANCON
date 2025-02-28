@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Codedge\Fpdf\Fpdf\Fpdf;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\pagalo\Models\Contrib;
-use App\Http\Controllers\pagalo\Models\IngCaja;
-use App\Http\Controllers\pagalo\Models\DetCaja;
+use App\Http\Controllers\pagalo\Models\Dtesoreria;
+use App\Http\Controllers\pagalo\Models\Mtesoreria;
 use Illuminate\Support\Facades\DB;
 
 class PdfReciboServices
@@ -16,60 +16,52 @@ class PdfReciboServices
     public function generateRecibo($nroRecibo, $outputMode = 'I')
     {
         header('Content-Type: text/html; charset=ISO-8859-1');
-        $contribuyente = Contrib::where('FACODCONTR', Session::get('SESS_CODIGO_CONTRI'))->first();
+        $contribuyente = Contrib::where('idsigma', Session::get('SESS_PERS_CONTR_CODIGO'))->first();
 
-        $recibo = IngCaja::where('FACODCONTR', Session::get('SESS_CODIGO_CONTRI'))
-            ->where('FANROOPERA', $nroRecibo)
+        $recibo = Dtesoreria::where('cidpers', Session::get('SESS_PERS_CONTR_CODIGO'))
+            ->where('cnumcom', $nroRecibo)
             ->first();
-        
-        $caja = $recibo->FANROCAJA;
-        $fecha = Carbon::parse($recibo->FDFECCAJA)->format('Y-d-m');
-        $hora = Carbon::parse($recibo->FAHORAOPER)->format('H:i:s');
+    
+        $caja = $recibo->vusernm;
+        $fecha = Carbon::parse($recibo->dfecpag)->format('Y-d-m');
+        $hora = Carbon::parse($recibo->dfecpag)->format('H:i:s');
 
         $fecha_recibo = $fecha;
 
-        $operacion = $recibo->FANROOPERA;
+        $operacion = $recibo->cnumcom;
         $detalles_recibo = null;
 
         try {
-            $sqlsrv_sims = DB::connection('sqlsrv_rentas');
-            $sqlsrv_sims->beginTransaction();
-
-            $sqlsrv_sims->statement("EXEC sp_caja_reimpresion_recibos_2024 ?, ?, ?, ?", array($fecha_recibo, $caja, $operacion, 'TR'));
-            $detalles_recibo = $sqlsrv_sims->select("EXEC dbo.SP_CAJA_TMPRECIBO_REIMPRESION_2024 @vdfecha = ?, @vcnrocaja = ?, @vcnroopera = ?", array($fecha_recibo, $caja, $operacion));
-            $sqlsrv_sims->statement("DELETE FROM REIMPRECIBO WHERE FECHA = ? AND CAJA = ? AND OPERACION = ?", array($fecha_recibo, $caja, $operacion));
-            $sqlsrv_sims->commit();
+            $detalles_recibo = Mtesoreria::
+            where('cnumcom', $nroRecibo)
+            ->get();
 
         } catch (\Exception $e) {
-            $sqlsrv_sims->rollBack();
             return response()->json(array('error' => $e->getMessage()), 500);
         }
-        
+
         #$fpdf = new CustomFpdf('P', 'mm', array(100,230));
         $fpdf = new CustomFpdf('P', 'mm', 'A4');
         $fpdf->AddPage();
         $fpdf->AliasNbPages();
         $fpdf->SetTitle('Recibo de pago');
-        $fpdf->Image('assets/images/logo-dark.png', 5, 5, 50);
+        $fpdf->Image(URL('').'/assets/images/logo-dark.png', 5, 5, 50);
         $fpdf->SetFont('Arial', '', 8);
         $fpdf->Ln(15);
         $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, 'MUNICIPALIDAD DISTRITAL DE ANCÓN', 0, 1, 'L');
+        $fpdf->Cell(80, 4, utf8_decode('MUNICIPALIDAD DISTRITAL DE ANCÓN'), 0, 1, 'L');
         $fpdf->Ln(1);
         $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, 'R.U.C. 20131372346', 0, 1, 'L');
+        $fpdf->Cell(80, 4, 'R.U.C. 20131378468', 0, 1, 'L');
         $fpdf->Ln(1);
         $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, 'Cod. Postal: Lima 34,', 0, 1, 'L');
+        $fpdf->Cell(80, 4, utf8_decode('Sede Central: Malecon Ferreyros 376 - Ancon - Lima - Lima - Perú'), 0, 1, 'L');
         $fpdf->Ln(1);
         $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, utf8_decode('Jr. Manuel Iribarren Nº 155, Anjcón - PERÚ'), 0, 1, 'L');
+        $fpdf->Cell(80, 4, 'Telf: (01) 748-0000', 0, 1, 'L');
         $fpdf->Ln(1);
         $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, 'Telf: (01) 748-3838', 0, 1, 'L');
-        $fpdf->Ln(1);
-        $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, 'WhatsApp: (01) 241 0413', 0, 1, 'L');
+        $fpdf->Cell(80, 4, 'WhatsApp: (01) 999999999', 0, 1, 'L');
         $fpdf->Ln(6);
 
         $fpdf->SetXY(120, 35);
@@ -79,10 +71,10 @@ class PdfReciboServices
         $fpdf->SetFont('Arial', '', 8);
         $fpdf->Ln(1);
        $fpdf->SetXY(120, 40);
-        $fpdf->Cell(80, 4, utf8_decode($contribuyente->FANOMCONTR), 0, 1, 'L');
+        $fpdf->Cell(80, 4, utf8_decode($contribuyente->vnombre), 0, 1, 'L');
         $fpdf->Ln(1);
        $fpdf->SetXY(120, 45);
-        $fpdf->Cell(80, 4, 'Codigo: '.utf8_decode($contribuyente->FACODCONTR), 0, 1, 'L');
+        $fpdf->Cell(80, 4, 'Codigo: '.utf8_decode($contribuyente->idsigma), 0, 1, 'L');
         $fpdf->Ln(1);
         #$fpdf->SetX(5);
         #$fpdf->Cell(80, 4, 'Dirección: '.utf8_decode($contribuyente->FACODCONTR), 0, 1, 'L');
@@ -92,9 +84,6 @@ class PdfReciboServices
         $fpdf->SetXY(120, 15);
         $fpdf->SetFont('Arial', '', 35);
         $fpdf->Cell(80, 4, 'Comprobante', 0, 1, 'R');
-        $fpdf->SetXY(120, 22);
-        $fpdf->SetFont('Arial', '', 14);
-        $fpdf->Cell(80, 4, $detalles_recibo[0]->SITUACION, 0, 1, 'R');
 
         $fpdf->Ln(4);
         $fpdf->SetXY(120, 55);
@@ -126,28 +115,26 @@ class PdfReciboServices
         $anexo = null;
         foreach ($detalles_recibo as $detalle) {
 
-            if ($anexo_group !== $detalle->QUIEBRE) {
-                $anexo_group = $detalle->QUIEBRE;
-                $anexo = $detalle->QUIEBRE;
-                
+            if ($anexo_group !== $detalle->ctippap) {
+                $anexo_group = $detalle->ctippap;                
                 $fpdf->SetX(5);
                 $fpdf->SetTextColor(0, 0, 255);
-                $fpdf->MultiCell(190, 4, trim($detalle->TRIBUTO).' '.utf8_decode(trim($detalle->DESCRIPCION)), 0);
+                $fpdf->MultiCell(190, 4, trim($detalle->ctippap), 0, 'L');
                 $fpdf->SetTextColor(0, 0, 0);
                 $fpdf->Ln(1);
             }
-            $beneficio = trim($detalle->DESCUENTO) ? $detalle->DESCUENTO : 0;
+            $beneficio = 0;
 
-            $total = $detalle->INSOLUTO+$detalle->EMISION+$detalle->MORAS+$detalle->COSTAS-$beneficio;
+            $total = $detalle->imp_insol+$detalle->costo_emis+$detalle->imp_mora-$beneficio;
             $fpdf->SetX(5);
-            $fpdf->Cell($headerWidth[0], 4, $detalle->PERIODO, 1, 0, 'C');
-            $fpdf->Cell($headerWidth[1], 4, $detalle->RECIBO, 1, 0, 'C');
-            $fpdf->Cell($headerWidth[2], 4, Carbon::parse($detalle->FECHA_VENCIMIENTO)->format('d/m/Y'), 1, 0, 'C');
+            $fpdf->Cell($headerWidth[0], 4, trim($detalle->ecuenta->cperiod). '-' .$detalle->ecuenta->cperanio, 1, 0, 'C');
+            $fpdf->Cell($headerWidth[1], 4, $detalle->idsigma, 1, 0, 'C');
+            $fpdf->Cell($headerWidth[2], 4, Carbon::parse($detalle->ecuenta->dfecven)->format('d/m/Y'), 1, 0, 'C');
             #$fpdf->Cell($headerWidth[3], 4, $detalle->SITUACION, 1, 0, 'R');
-            $fpdf->Cell($headerWidth[3], 4, number_format($detalle->INSOLUTO,2), 1, 0, 'R');
-            $fpdf->Cell($headerWidth[4], 4, number_format($detalle->EMISION,2), 1, 0, 'R');
-            $fpdf->Cell($headerWidth[5], 4, number_format($detalle->MORAS,2), 1, 0, 'R');
-            $fpdf->Cell($headerWidth[6], 4, number_format($detalle->COSTAS,2), 1, 0, 'R');
+            $fpdf->Cell($headerWidth[3], 4, number_format($detalle->imp_insol,2), 1, 0, 'R');
+            $fpdf->Cell($headerWidth[4], 4, number_format($detalle->costo_emis,2), 1, 0, 'R');
+            $fpdf->Cell($headerWidth[5], 4, number_format($detalle->imp_mora,2), 1, 0, 'R');
+            $fpdf->Cell($headerWidth[6], 4, number_format(0,2), 1, 0, 'R');
             $fpdf->Cell($headerWidth[7], 4, number_format($beneficio,2), 1, 0, 'R');
             $fpdf->Cell($headerWidth[8], 4, number_format($total,2), 1, 0, 'R');
             $fpdf->Ln();

@@ -6,10 +6,9 @@ use Illuminate\Support\Facades\DB;
 
 class Contrib extends Model
 {
-    protected $connection = 'sqlsrv_rentas';
-    protected $table = 'dbo.CONTRIB';
+    protected $table = 'public.mperson';
 
-    protected $primaryKey = 'FACODCONTR';
+    protected $primaryKey = 'idsigma';
 
     public $keyType = 'varchar';
 
@@ -19,12 +18,5 @@ class Contrib extends Model
     
     protected $fillable = [
     ];
-    
-    public function direccion()
-    {
-        $contribuyente = $this->FACODCONTR;
-        $direccion = DB::connection($this->connection)
-                    ->select("SET NOCOUNT ON; SELECT dbo.f_obtner_domfiscal_contrib('$contribuyente') AS direccion")[0]->direccion;
-        return $direccion ?? 'No se encontró dirección';
-    }
+
 }

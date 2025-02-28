@@ -20,6 +20,7 @@ use App\Http\Controllers\pagalo\Models\EstadoCuenta;
 use App\Http\Controllers\pagalo\Models\RegistroPago;
 use App\Http\Controllers\pagalo\Models\Dtesoreria;
 use App\Http\Controllers\pagalo\Models\Mtesoreria;
+use App\Http\Controllers\pagalo\Models\AperturaCaja;
 use App\Traits\UtilsTrait;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -339,11 +340,8 @@ class PagosEnLineaController extends Controller
         $transactionData = $params['transactionData'];
         $codigo_operacion = $params['codigo_operacion'];
         $purchaseNumber = $params['purchaseNumber'];
-        #$json = $params['json'];
 
         try {
-            #$data = json_decode($json, true);
-
             DB::beginTransaction();
 
             #************************************* Cambiar estado de cuenta *************************************
@@ -359,7 +357,7 @@ class PagosEnLineaController extends Controller
             $fecha_pago = Carbon::now();
             $fecha_pago = $fecha_pago->format('Y-m-d H:i:s');
 
-            $nroCaja = '0049'; #caja pagos en linea
+            $nroCaja = config('titania.caja.nro'); #caja pagos en linea
             $nroRecibo = 0;
 
             $resultado = DB::select("SELECT tesoreria.obt_nro_recibo(?) AS nro_recibo", [$nroCaja]);
@@ -367,6 +365,8 @@ class PagosEnLineaController extends Controller
                 $nroRecibo = $resultado[0]->nro_recibo;
 
             Log::info('nroRecibo: '.$nroRecibo);
+
+            $codigo_apertura_caja = (new AperturaCaja())->codapeturacajero($nroCaja);
 
             foreach ($registrosPago as $registro) {
                 EstadoCuenta::where('idsigma', $registro->idsigma)
@@ -380,35 +380,42 @@ class PagosEnLineaController extends Controller
                         'imp_mora' => $registro->mora_d
                     ]);
 
-                    #genera recibo detalle
-                    $mtesoreria = new Mtesoreria();
-                    #$mtesoreria->idsigma = $codigo;
-                    $mtesoreria->cidecta = $registro->idsigma;
-                    $mtesoreria->cnumcom = $nroRecibo;
-                    $mtesoreria->nmontot = $transactionData['AMOUNT'];
-                    $mtesoreria->dfecpag = $fecha_pago;
-                    $mtesoreria->nestado = '1';
-                    $mtesoreria->vusernm = $nroCaja;
-                    $mtesoreria->vhostnm = $this->getIpCliente();
-                    $mtesoreria->ddatetm = $fecha_pago;
-                    $mtesoreria->cidpers = $codigo;
-                    $mtesoreria->cidpred = $registro->cidpred;
-                    $mtesoreria->cperanio = $registro->cperanio;
-                    $mtesoreria->ctiprec = $registro->ctiprec;
-                    $mtesoreria->cperiod = $registro->cperiod;
-                    $mtesoreria->ncantid = 1;
-                    $mtesoreria->imp_insol = $registro->imp_insol;
-                    $mtesoreria->fact_reaj = $registro->reajuste;
-                    $mtesoreria->imp_reaj = $registro->reajuste;
-                    $mtesoreria->fact_mora = $registro->factor_mora_d;
-                    $mtesoreria->imp_mora = $registro->mora_d;
-                    $mtesoreria->costo_emis = $registro->costo_emis;
-                    $mtesoreria->vobserv = $purchaseNumber;
-                    $mtesoreria->ctippag = '1000001864';
-                    $mtesoreria->cnroope = $purchaseNumber;
-                    $mtesoreria->cidapertura = '0000000000';
-                    $mtesoreria->cnumope = $nroRecibo;
-                    $mtesoreria->save();
+                    DB::transaction(function () use ($registro, $codigo, $fecha_pago, $purchaseNumber, $nroRecibo, $transactionData, $nroCaja, $codigo_apertura_caja) {
+                        #genera recibo detalle
+                        DB::table('tesoreria.mtesore')->lockForUpdate()->get();
+                        
+                        $nuevoIdsigma = Mtesoreria::max('idsigma');
+                        $nuevoIdsigma = str_pad((intval($nuevoIdsigma) + 1), 10, '0', STR_PAD_LEFT);
+
+                        $mtesoreria = new Mtesoreria();
+                        $mtesoreria->idsigma = $nuevoIdsigma;
+                        $mtesoreria->cidecta = $registro->idsigma;
+                        $mtesoreria->cnumcom = $nroRecibo;
+                        $mtesoreria->nmontot = $transactionData['AMOUNT'];
+                        $mtesoreria->dfecpag = $fecha_pago;
+                        $mtesoreria->nestado = '1';
+                        $mtesoreria->vusernm = $nroCaja;
+                        $mtesoreria->vhostnm = $this->getIpCliente();
+                        $mtesoreria->ddatetm = $fecha_pago;
+                        $mtesoreria->cidpers = $codigo;
+                        $mtesoreria->cidpred = $registro->cidpred;
+                        $mtesoreria->cperanio = $registro->cperanio;
+                        $mtesoreria->ctiprec = $registro->ctiprec;
+                        $mtesoreria->cperiod = $registro->cperiod;
+                        $mtesoreria->ncantid = 1;
+                        $mtesoreria->imp_insol = $registro->imp_insol;
+                        $mtesoreria->fact_reaj = $registro->reajuste;
+                        $mtesoreria->imp_reaj = $registro->reajuste;
+                        $mtesoreria->fact_mora = $registro->factor_mora_d;
+                        $mtesoreria->imp_mora = $registro->mora_d;
+                        $mtesoreria->costo_emis = $registro->costo_emis;
+                        $mtesoreria->vobserv = $purchaseNumber;
+                        $mtesoreria->ctippag = '1000001864';
+                        $mtesoreria->cnroope = $purchaseNumber;
+                        $mtesoreria->cidapertura = $codigo_apertura_caja;
+                        #$mtesoreria->cnumope = $nroRecibo;
+                        $mtesoreria->save();
+                    });
             }
 
             Log::info('Fin tabla mtesoreria');
@@ -436,7 +443,7 @@ class PagosEnLineaController extends Controller
             $dtesoreria->vhostnm = $this->getIpCliente();
             $dtesoreria->vusernm = $nroCaja;
             $dtesoreria->ddatetm = $fecha_pago;
-            $dtesoreria->cnumope = $nroRecibo;
+            #$dtesoreria->cnumope = $nroRecibo;
             $dtesoreria->save();
         
             Log::info('Fin tabla dtesoreria');
@@ -452,13 +459,13 @@ class PagosEnLineaController extends Controller
 
     public function viewMisRecibos(){
         $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
-        // $recibos = IngCaja::where('FACODCONTR', $codigo)
-        // ->where('FANROCAJA', 'PO') #SOLO PAGOS EN LINEA
-        // ->OrderBy('FDFECCAJA','DESC')
-        // ->OrderBy('FANROOPERA','DESC')
-        // ->get();
+
+        $recibos = Dtesoreria::where('cidpers', $codigo)
+        ->where('vusernm', config('titania.caja.nro')) #SOLO PAGOS EN LINEA
+        ->OrderBy('dfecpag','DESC')
+        ->get();
         
-        $page_data['recibos'] = [];
+        $page_data['recibos'] = $recibos;
         $page_data['titulo_principal'] = 'Mis recibos';
         $page_data['page_directory'] = 'pagalo.pago_linea';
         $page_data['page_name'] = 'mis_recibos';

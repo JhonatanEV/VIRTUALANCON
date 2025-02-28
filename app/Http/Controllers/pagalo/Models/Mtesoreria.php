@@ -3,6 +3,7 @@ namespace App\Http\Controllers\pagalo\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\pagalo\Models\EstadoCuenta;
 
 class Mtesoreria extends Model
 {
@@ -43,4 +44,19 @@ class Mtesoreria extends Model
         'cidapertura',
         'cnumope'
     ];
+
+    private function generarIdsigma()
+    {
+        $maxIdsigma = Mtesoreria::max('idsigma');
+        if (empty($maxIdsigma)) {
+            return '0000000001';
+        }
+        $nuevoIdsigma = str_pad((intval($maxIdsigma) + 1), 10, '0', STR_PAD_LEFT);
+        return $nuevoIdsigma;
+    }
+
+    public function ecuenta()
+    {
+        return $this->belongsTo(EstadoCuenta::class, 'cidecta', 'idsigma');
+    }
 }

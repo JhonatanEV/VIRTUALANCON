@@ -57,7 +57,7 @@ class PdfReciboServicesTest
         $fpdf->Cell(80, 4, 'MUNICIPALIDAD DISTRITAL', 0, 1, 'L');
         $fpdf->Ln(1);
         $fpdf->SetX(5);
-        $fpdf->Cell(80, 4, 'R.U.C. 20131372346', 0, 1, 'L');
+        $fpdf->Cell(80, 4, 'R.U.C. 20131378468', 0, 1, 'L');
         $fpdf->Ln(1);
         $fpdf->SetX(5);
         $fpdf->Cell(80, 4, 'Cod. Postal: Lima 34,', 0, 1, 'L');

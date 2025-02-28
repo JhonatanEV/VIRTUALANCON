@@ -15,13 +15,13 @@
                 <div class="files-nav overflow-auto" style="max-height: 33rem;">                                     
                     <div class="nav flex-column nav-pills" id="files-tab" aria-orientation="vertical">
                         @foreach($recibos as $recibo)
-                            <a class="nav-link" href="{{ route('pagalo.mis-recibos-pdf', $recibo->FANROOPERA) }}">
+                            <a class="nav-link" href="{{ route('pagalo.mis-recibos-pdf', $recibo->cnumcom) }}">
                                 <div class="icon-dual-file icon-sm me-3">
                                     <i class="lar la-file-code text-danger font-34"></i>
                                 </div>
                                 <div class="d-inline-block align-self-center">
-                                    <h5 class="m-0">Recibo N° {{ $recibo->FANROOPERA }} - {{ \Carbon\Carbon::parse($recibo->FDFECCAJA)->format('d/m/Y') }}</h5>
-                                    <small>Total pagado: S/. {{ number_format($recibo->FNIMPORTE,2) }}</small>                                                    
+                                    <h5 class="m-0">Recibo N° {{ $recibo->cnumcom }} - {{ \Carbon\Carbon::parse($recibo->dfecpag)->format('d/m/Y') }}</h5>
+                                    <small>Total pagado: S/. {{ number_format($recibo->nmontot,2) }}</small>                                                    
                                 </div>
                             </a>
                         @endforeach
