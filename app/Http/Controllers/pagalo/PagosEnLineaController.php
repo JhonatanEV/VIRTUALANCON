@@ -138,31 +138,31 @@ class PagosEnLineaController extends Controller
 
         try {            
             
-            $params = [
-                'codigo' => $codigo,
-                'contribuyente' => '',
-                'transactionData' => [
-                    'AMOUNT' => $total,
-                    'TRANSACTION_DATE' => Carbon::now()->format('Y-m-d H:i:s'),
-                    'ACTION_CODE' => '000',
-                    'STATUS' => 'APROBADO',
-                    'TRANSACTION_ID' => '00000000000000000000',
-                    'NRO_PEDIDO' => '00000000000000000000'
-                ],
-                'codigo_operacion' => $FACODCHECKOUT,
-                'purchaseNumber' => $purchaseNumber,
-                //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
-            ];
-            try {
-                    $reciboResponse = $this->generarPago($params);
+            // $params = [
+            //     'codigo' => $codigo,
+            //     'contribuyente' => '',
+            //     'transactionData' => [
+            //         'AMOUNT' => $total,
+            //         'TRANSACTION_DATE' => Carbon::now()->format('Y-m-d H:i:s'),
+            //         'ACTION_CODE' => '000',
+            //         'STATUS' => 'APROBADO',
+            //         'TRANSACTION_ID' => '00000000000000000000',
+            //         'NRO_PEDIDO' => '00000000000000000000'
+            //     ],
+            //     'codigo_operacion' => $FACODCHECKOUT,
+            //     'purchaseNumber' => $purchaseNumber,
+            //     //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
+            // ];
+            // try {
+            //         $reciboResponse = $this->generarPago($params);
                     
-                    Log::info('reciboResponse: '.json_encode($reciboResponse));
+            //         Log::info('reciboResponse: '.json_encode($reciboResponse));
 
-            } catch (\Throwable $th) {
-                Log::error('Error al generar recibo 1: '.$th->getMessage());
-            }
+            // } catch (\Throwable $th) {
+            //     Log::error('Error al generar recibo 1: '.$th->getMessage());
+            // }
             
-            return response()->json(['mensaje' => 'Pago registrado correctamente', 'data' => [], 'code' => 200], 200);
+            // return response()->json(['mensaje' => 'Pago registrado correctamente', 'data' => [], 'code' => 200], 200);
             
             #*************************************** FIN PRUEBA ***************************************
 
