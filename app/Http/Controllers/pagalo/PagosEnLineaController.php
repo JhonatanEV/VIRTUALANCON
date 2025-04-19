@@ -441,6 +441,7 @@ class PagosEnLineaController extends Controller
 
                 Log::info('Update en Estado Cuenta');
 
+                $subtotal = $registro->imp_insol + $registro->reajuste + $registro->mora_d + $registro->costo_emis;
                 // Generar nuevo idsigma para mtesoreria
                 $nuevoIdsigmaInt += 1;
                 $nuevoIdsigma = str_pad($nuevoIdsigmaInt, 10, '0', STR_PAD_LEFT);
@@ -449,7 +450,7 @@ class PagosEnLineaController extends Controller
                 $mtesoreria->idsigma = $nuevoIdsigma;
                 $mtesoreria->cidecta = $registro->idsigma;
                 $mtesoreria->cnumcom = $nroRecibo;
-                $mtesoreria->nmontot = $registro->nmontot;
+                $mtesoreria->nmontot = $subtotal;
                 $mtesoreria->dfecpag = $fecha_pago;
                 $mtesoreria->nestado = '1';
                 $mtesoreria->vusernm = $nroCaja;
