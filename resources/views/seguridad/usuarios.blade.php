@@ -79,6 +79,7 @@
                                     <label class="form-label mb-0" for="perf_codigo">Perfil de Usuario</label>
                                     <select class="form-select" id="perf_codigo" name="perf_codigo" required>
                                         <option>-- Seleccione --</option>
+                                        <option value="1">ADMINISTRADOR</option>
                                         <option value="3">CONTRIBUYENTE</option>
                                     </select>
                                 </div>

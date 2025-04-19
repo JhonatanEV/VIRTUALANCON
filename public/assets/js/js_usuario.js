@@ -1,6 +1,6 @@
 $(document).ready(function() {
     listarUsuarios();
-    LlenarComboPerfil();
+    // LlenarComboPerfil();
 })
 
 function AbrirModal(){
@@ -68,10 +68,10 @@ function EliminarData(usua_codigo,usua_estado){
 function EditarData(btn){
         LimpiarDatos("frmUsuario");
         let data = JSON.parse($(btn).attr("data-elemento"));
-       // console.log(data);
+    //    console.log(data);
        setValue("pers_codigo",data.pers_codigo);
        setValue("perf_codigo",data.perf_codigo);
-       setValue("pers_nombre",data.pers_nombre);
+       setValue("pers_nombre",data.pers_nombre_completo);
        setValue("pers_tipodoc",data.pers_tipodoc);
        setValue("pers_documento",data.pers_documento);
        setValue("usua_codigo",data.usua_codigo);
