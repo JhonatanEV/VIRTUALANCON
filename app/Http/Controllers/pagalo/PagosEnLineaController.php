@@ -138,31 +138,31 @@ class PagosEnLineaController extends Controller
 
         try {            
             
-            // $params = [
-            //     'codigo' => $codigo,
-            //     'contribuyente' => '',
-            //     'transactionData' => [
-            //         'AMOUNT' => $total,
-            //         'TRANSACTION_DATE' => Carbon::now()->format('Y-m-d H:i:s'),
-            //         'ACTION_CODE' => '000',
-            //         'STATUS' => 'APROBADO',
-            //         'TRANSACTION_ID' => '00000000000000000000',
-            //         'NRO_PEDIDO' => '00000000000000000000'
-            //     ],
-            //     'codigo_operacion' => $FACODCHECKOUT,
-            //     'purchaseNumber' => $purchaseNumber,
-            //     //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
-            // ];
-            // try {
-            //         $reciboResponse = $this->generarPago($params);
+            /*$params = [
+                'codigo' => $codigo,
+                'contribuyente' => '',
+                'transactionData' => [
+                    'AMOUNT' => $total,
+                    'TRANSACTION_DATE' => Carbon::now()->format('Y-m-d H:i:s'),
+                    'ACTION_CODE' => '000',
+                    'STATUS' => 'APROBADO',
+                    'TRANSACTION_ID' => '00000000000000000000',
+                    'NRO_PEDIDO' => '00000000000000000000'
+                ],
+                'codigo_operacion' => $FACODCHECKOUT,
+                'purchaseNumber' => $purchaseNumber,
+                //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
+            ];
+            try {
+                    $reciboResponse = $this->generarPago($params);
                     
-            //         Log::info('reciboResponse: '.json_encode($reciboResponse));
+                    Log::info('reciboResponse: '.json_encode($reciboResponse));
 
-            // } catch (\Throwable $th) {
-            //     Log::error('Error al generar recibo 1: '.$th->getMessage());
-            // }
+            } catch (\Throwable $th) {
+                Log::error('Error al generar recibo 1: '.$th->getMessage());
+            }
             
-            // return response()->json(['mensaje' => 'Pago registrado correctamente', 'data' => [], 'code' => 200], 200);
+            return response()->json(['mensaje' => 'Pago registrado correctamente', 'data' => [], 'code' => 200], 200);*/
             
             #*************************************** FIN PRUEBA ***************************************
 
@@ -334,7 +334,8 @@ class PagosEnLineaController extends Controller
             return response()->json(['error' => 'Error al registrar el pago', 'data' => $th->getMessage(), 'code' => 500], 500);
         }
     }
-    public function generarPago($params){
+    public function generarPago($params)
+    {
         $codigo = $params['codigo'];
         $contribuyente = $params['contribuyente'];
         $transactionData = $params['transactionData'];
@@ -344,7 +345,6 @@ class PagosEnLineaController extends Controller
         try {
             DB::beginTransaction();
 
-            #************************************* Cambiar estado de cuenta *************************************
             $registrosPago = RegistroPago::where('codigo_operacion', $codigo_operacion)
                 ->where('pushernumber', $purchaseNumber)
                 ->where('cidpers', $codigo)
@@ -354,81 +354,138 @@ class PagosEnLineaController extends Controller
                 throw new \Exception('No se encontraron registros en RegistroPago para actualizar.');
             }
 
-            $fecha_pago = Carbon::now();
-            $fecha_pago = $fecha_pago->format('Y-m-d H:i:s');
-
-            $nroCaja = config('titania.caja.nro'); #caja pagos en linea
+            $fecha_pago = Carbon::now()->format('Y-m-d H:i:s');
+            $nroCaja = config('titania.caja.nro');
             $nroRecibo = 0;
 
+            #Obtener número de recibo
             $resultado = DB::select("SELECT tesoreria.obt_nro_recibo(?) AS nro_recibo", [$nroCaja]);
-            if (!empty($resultado))
+            if (!empty($resultado)) {
                 $nroRecibo = $resultado[0]->nro_recibo;
+            }
 
             Log::info('nroRecibo: '.$nroRecibo);
 
+            #código de apertura de caja
             $codigo_apertura_caja = (new AperturaCaja())->codapeturacajero($nroCaja);
+            Log::info('codigo_apertura_caja: '.$codigo_apertura_caja);
+
+            #máximo idsigma actual una vez (fuera del bucle)
+            $ultimoIdsigma = DB::table('tesoreria.mtesore')
+                ->select(DB::raw('MAX(idsigma) as max_id'))
+                ->value('max_id') ?? '0000000000';
+            $nuevoIdsigmaInt = intval($ultimoIdsigma);
+
+            #NRO OPERACION
+            $nextVal = DB::select("SELECT nextval('tesoreria.sec_num_operacion') AS sec")[0]->sec;
+            $cnumope = substr('0000000000' . $nextVal, -10);
+            Log::info('cnumope: '.$cnumope);
+            $ipCliente = $this->getIpCliente();
+
+            /*$v_estoriginal = collect($registrosPago)
+            ->first(fn($r) => $r->nestado === 'I' && $r->cidcont === '0000007285')
+            ->vdescri ?? '0';*/
 
             foreach ($registrosPago as $registro) {
+
+                /*$cuenta = EstadoCuenta::where('idsigma', $registro->idsigma)
+                    ->where('cidpers', $codigo)
+                    ->first();
+
+                if (!$cuenta) continue;
+
+                #Extraer datos
+                $a_nestado = $registro->nestado ?? '1';
+                $b_nestado = $cuenta->nestado;
+                $cidpred   = $cuenta->cidpred;
+
+                // Calcular nuevo estado
+                if ($a_nestado === '10') {
+                    $nuevoEstado = '*';
+                } elseif ($a_nestado === '15') {
+                    $nuevoEstado = 'Q';
+                } elseif ($a_nestado === '1' && $b_nestado === 'I') {
+                    if ($v_estoriginal === '0') {
+                        $nuevoEstado = '1';
+                    } elseif (in_array($v_estoriginal, ['B', 'F'])) {
+                        $nuevoEstado = 'C';
+                    } elseif (in_array($v_estoriginal, ['D', 'P', 'J']) || $cidpred === '0000000355') {
+                        $nuevoEstado = 'E';
+                    } else {
+                        $nuevoEstado = $a_nestado;
+                    }
+                } elseif ($a_nestado === '1' && $b_nestado !== 'I') {
+                    if ($b_nestado === '0') {
+                        $nuevoEstado = '1';
+                    } elseif (in_array($b_nestado, ['B', 'F'])) {
+                        $nuevoEstado = 'C';
+                    } elseif (in_array($b_nestado, ['D', 'P', 'J']) || $cidpred === '0000000355') {
+                        $nuevoEstado = 'E';
+                    } else {
+                        $nuevoEstado = $a_nestado;
+                    }
+                } else {
+                    $nuevoEstado = $a_nestado;
+                }*/
+
                 EstadoCuenta::where('idsigma', $registro->idsigma)
-                    ->where('nestado', '0')
+                    ->whereIn('nestado',['0', '3', 'B', 'D', 'F', 'I', 'J', 'K', 'N', 'P', 'R'])
                     ->where('cidpers', $codigo)
                     ->update([
-                        'nestado' => '1',
+                        'nestado' => '1', #$nuevoEstado,
                         'dfecpag' => $fecha_pago,
                         'vobserv' => $purchaseNumber,
                         'fact_mora' => $registro->factor_mora_d,
                         'imp_mora' => $registro->mora_d
                     ]);
 
-                    DB::transaction(function () use ($registro, $codigo, $fecha_pago, $purchaseNumber, $nroRecibo, $transactionData, $nroCaja, $codigo_apertura_caja) {
-                        #genera recibo detalle
-                        DB::table('tesoreria.mtesore')->lockForUpdate()->get();
-                        
-                        $nuevoIdsigma = Mtesoreria::max('idsigma');
-                        $nuevoIdsigma = str_pad((intval($nuevoIdsigma) + 1), 10, '0', STR_PAD_LEFT);
+                Log::info('Update en Estado Cuenta');
 
-                        $mtesoreria = new Mtesoreria();
-                        $mtesoreria->idsigma = $nuevoIdsigma;
-                        $mtesoreria->cidecta = $registro->idsigma;
-                        $mtesoreria->cnumcom = $nroRecibo;
-                        $mtesoreria->nmontot = $transactionData['AMOUNT'];
-                        $mtesoreria->dfecpag = $fecha_pago;
-                        $mtesoreria->nestado = '1';
-                        $mtesoreria->vusernm = $nroCaja;
-                        $mtesoreria->vhostnm = $this->getIpCliente();
-                        $mtesoreria->ddatetm = $fecha_pago;
-                        $mtesoreria->cidpers = $codigo;
-                        $mtesoreria->cidpred = $registro->cidpred;
-                        $mtesoreria->cperanio = $registro->cperanio;
-                        $mtesoreria->ctiprec = $registro->ctiprec;
-                        $mtesoreria->cperiod = $registro->cperiod;
-                        $mtesoreria->ncantid = 1;
-                        $mtesoreria->imp_insol = $registro->imp_insol;
-                        $mtesoreria->fact_reaj = $registro->reajuste;
-                        $mtesoreria->imp_reaj = $registro->reajuste;
-                        $mtesoreria->fact_mora = $registro->factor_mora_d;
-                        $mtesoreria->imp_mora = $registro->mora_d;
-                        $mtesoreria->costo_emis = $registro->costo_emis;
-                        $mtesoreria->vobserv = $purchaseNumber;
-                        $mtesoreria->ctippag = '1000001864';
-                        $mtesoreria->cnroope = $purchaseNumber;
-                        $mtesoreria->cidapertura = $codigo_apertura_caja;
-                        #$mtesoreria->cnumope = $nroRecibo;
-                        $mtesoreria->save();
-                    });
+                // Generar nuevo idsigma para mtesoreria
+                $nuevoIdsigmaInt += 1;
+                $nuevoIdsigma = str_pad($nuevoIdsigmaInt, 10, '0', STR_PAD_LEFT);
+
+                $mtesoreria = new Mtesoreria();
+                $mtesoreria->idsigma = $nuevoIdsigma;
+                $mtesoreria->cidecta = $registro->idsigma;
+                $mtesoreria->cnumcom = $nroRecibo;
+                $mtesoreria->nmontot = $registro->nmontot;
+                $mtesoreria->dfecpag = $fecha_pago;
+                $mtesoreria->nestado = '1';
+                $mtesoreria->vusernm = $nroCaja;
+                $mtesoreria->vhostnm = $ipCliente;
+                $mtesoreria->ddatetm = $fecha_pago;
+                $mtesoreria->cidpers = $codigo;
+                $mtesoreria->cidpred = $registro->cidpred;
+                $mtesoreria->cperanio = $registro->cperanio;
+                $mtesoreria->ctiprec = $registro->ctiprec;
+                $mtesoreria->cperiod = $registro->cperiod;
+                $mtesoreria->ncantid = 1;
+                $mtesoreria->imp_insol = $registro->imp_insol;
+                $mtesoreria->fact_reaj = $registro->reajuste;
+                $mtesoreria->imp_reaj = $registro->reajuste;
+                $mtesoreria->fact_mora = $registro->factor_mora_d;
+                $mtesoreria->imp_mora = $registro->mora_d;
+                $mtesoreria->costo_emis = $registro->costo_emis;
+                $mtesoreria->vobserv = $purchaseNumber;
+                $mtesoreria->ctippag = '1000001864';
+                $mtesoreria->cnroope = $purchaseNumber;
+                $mtesoreria->cidapertura = $codigo_apertura_caja;
+                $mtesoreria->cnumope = $cnumope;
+                $mtesoreria->save();
             }
 
             Log::info('Fin tabla mtesoreria');
 
-            #Elimina los registros de RegistroPago
+            // Eliminar registros temporales de RegistroPago
             RegistroPago::where('codigo_operacion', $codigo_operacion)
                 ->whereNull('pushernumber')
                 ->where('cidpers', $codigo)
                 ->delete();
 
             Log::info('Fin tabla RegistroPago');
-            #************************************* Fin Cambiar estado de cuenta *************************************
-            #genera recibo cabecera
+
+            #Insertar cabecera en dtesoreria
             $dtesoreria = new Dtesoreria();
             $dtesoreria->idsigma = Str::uuid();
             $dtesoreria->cnumcom = $nroRecibo;
@@ -437,25 +494,33 @@ class PagosEnLineaController extends Controller
             $dtesoreria->nnroope = $purchaseNumber;
             $dtesoreria->dfecpag = $fecha_pago;
             $dtesoreria->dnrodoc = Session::get('SESS_PERS_DOCUMENTO');
-            $dtesoreria->ctippag = '1000001864'; #Efectivo
+            $dtesoreria->ctippag = '1000001864';
             $dtesoreria->nestado = 1;
             $dtesoreria->nmontot = $transactionData['AMOUNT'];
             $dtesoreria->vhostnm = $this->getIpCliente();
             $dtesoreria->vusernm = $nroCaja;
             $dtesoreria->ddatetm = $fecha_pago;
-            #$dtesoreria->cnumope = $nroRecibo;
             $dtesoreria->save();
-        
+
             Log::info('Fin tabla dtesoreria');
+
+            #Actualizas nro comprobante en series de cajero
+            DB::table('tesoreria.mseries')
+            ->where('ccajero', $nroCaja)
+            ->where('ctipdoc', '01')
+            ->increment('cnroact');
+
             DB::commit();
+
+            return response()->json(['emitido' => $nroRecibo], 200);
 
         } catch (\Exception $th) {
             DB::rollBack();
             Log::error('Error al generar recibo 2: '.$th->getMessage());
+            return response()->json(['error' => $th->getMessage()], 500);
         }
-        
-        return response()->json(['emitido' => $nroRecibo ], 200);
     }
+
 
     public function viewMisRecibos(){
         $codigo = Session::get('SESS_PERS_CONTR_CODIGO');

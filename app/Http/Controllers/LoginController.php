@@ -142,7 +142,7 @@ class LoginController extends Controller
 			}
 			$persona = new Persona();
 			if(!empty($request->codigo)):
-				$codigo = str_pad($request->codigo, 7, "0", STR_PAD_LEFT);
+				$codigo = str_pad($request->codigo, 10, "0", STR_PAD_LEFT);
 				$persona->PERS_CONTR_CODIGO = $codigo;
 			endif;
 			
