@@ -114,12 +114,22 @@ class PdfReciboServices
         $anexo_group = null;
         $anexo = null;
         foreach ($detalles_recibo as $detalle) {
+            #$tipo_deuda = $detalle->ecuenta->mconten->vdescri;
+            
+            $anexo = $detalle->ecuenta->mconten->vdescri;
+            if ($detalle->ecuenta->mconten->vobserv == 'IP') {
+                $anexo = $detalle->ecuenta->mconten->vdescri;
+            } else {
+                $anexo = 'ANEXO: '.$detalle->ecuenta->cidpred.' - '.$detalle->ecuenta->mconten->vdescri;
+            }
 
-            if ($anexo_group !== $detalle->ctippap) {
-                $anexo_group = $detalle->ctippap;                
+
+
+            if ($anexo_group !== $anexo) {
+                $anexo_group = $anexo;                
                 $fpdf->SetX(5);
                 $fpdf->SetTextColor(0, 0, 255);
-                $fpdf->MultiCell(190, 4, trim($detalle->ctippap), 0, 'L');
+                $fpdf->MultiCell(190, 4, trim($anexo), 0, 'L');
                 $fpdf->SetTextColor(0, 0, 0);
                 $fpdf->Ln(1);
             }

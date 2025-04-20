@@ -3,7 +3,7 @@ namespace App\Http\Controllers\pagalo\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-
+use App\Http\Controllers\pagalo\Models\Mconten;
 class EstadoCuenta extends Model
 {
     protected $table = 'tesoreria.mestcta';
@@ -35,4 +35,9 @@ class EstadoCuenta extends Model
         'codigo_operacion',
         'pushernumber' 
     ];
+
+    public function mconten()
+    {
+        return $this->belongsTo(Mconten::class, 'ctiping', 'idsigma');
+    }
 }
