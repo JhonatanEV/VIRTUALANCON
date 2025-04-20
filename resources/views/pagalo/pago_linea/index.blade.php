@@ -76,6 +76,17 @@
                         </thead>
                         <tbody>
                             @foreach($allEcuenta as $ecuenta)
+
+                                @if($ecuenta['abrev_tributo'] == 'IP')
+                                    @php
+                                        $tributo = $ecuenta['nom_tributo'];
+                                    @endphp
+                                @else
+                                    @php
+                                        $tributo = 'ANEXO: '.$ecuenta['cod_pred'].' - '.$ecuenta['nom_tributo'];
+                                    @endphp
+                                @endif
+
                             <tr>
                                 <td class="dtr-control">{{ $ecuenta['nom_tributo'] }}</td>
                                 <td class="text-end">{{ $ecuenta['anio'] }}</td>
@@ -87,7 +98,7 @@
                                 <td class="text-end">{{ number_format($ecuenta['costo_emis'],2) }}</td>
                                 <td class="text-end">{{ number_format($ecuenta['mora'],2) }}</td>
                                 <td class="text-end total-pie-tabla">{{ number_format($ecuenta['total'],2) }}</td>
-                                <td>{{ $ecuenta['nom_tributo'] }}</td>
+                                <td>{{ $tributo }}</td>
                                 <td class="text-end">{{ $ecuenta['situacion'] }}</td>
                                 <td class="text-center">
                                     <div class="col-md">
@@ -172,9 +183,9 @@
                                                     <th class="text-center fw-bold">TRIBUTO</th>
                                                     <th class="text-center fw-bold">AÑO</th>
                                                     <th class="text-center fw-bold">PER.</th>
-                                                    <th class="text-center fw-bold">SUB TOTAL</th>
-                                                    <th class="text-center fw-bold">DESCUENTO</th>
-                                                    <th class="text-center fw-bold">TOTAL</th>
+                                                    <th class="text-end fw-bold">SUB TOTAL</th>
+                                                    <th class="text-end fw-bold">DESCUENTO</th>
+                                                    <th class="text-end fw-bold">TOTAL</th>
                                                 </tr>
                                             </thead>
                                             <tbody>

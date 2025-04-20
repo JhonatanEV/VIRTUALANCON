@@ -99,6 +99,7 @@ class PagosEnLineaController extends Controller
             $codigo_operacion = '00000000000000000000';
 
             foreach ($data as $item) {
+                $item = (array) $item;
                 // Extraer los idsigma_agrupados
                 $idsigma_agrupados = explode(',', $item['idsigma_agrupados']);
 
@@ -108,12 +109,56 @@ class PagosEnLineaController extends Controller
                 
                 $codigo_operacion = $item['codigo_operacion'];
             }
+            Log::info('$codigo_operacion:'.$codigo_operacion);
+
+            #APLICAR DESCUENTOS A LOS REGISTROS MARCADOS
+            RegistroPago::aplicarDescuentosSeleccionados($purchaseNumber);
+
+            $registrosActualizados = RegistroPago::where('pushernumber', $purchaseNumber)
+            ->where('codigo_operacion',$codigo_operacion)
+            ->get();
+
+            Log::info('Actualizar descuento para frontend');
+            $dataFormateada = collect($data)->map(function ($item) use ($registrosActualizados) {
+                $item = (array) $item;
+            
+                $idsigmaArray = explode(',', $item['idsigma_agrupados']);
+            
+                // Buscar todos los registros correspondientes a ese ítem
+                $registros = $registrosActualizados->filter(function ($r) use ($idsigmaArray, $item) {
+                    return in_array($r->idsigma, $idsigmaArray) &&
+                        $r->codigo_operacion === $item['codigo_operacion'];
+                });
+            
+                // Sumar descuentos y recalcular total
+                $descuentoTotal = $registros->sum('descuento');
+            
+                // Total real = suma de todos los campos menos descuento
+                $totalReal = $registros->sum(function ($r) {
+                    return $r->imp_insol + $r->costo_emis + $r->reajuste + $r->mora_d;
+                }) - $descuentoTotal;
+            
+                // Formatear resultados
+                $item['descuento'] = number_format($descuentoTotal, 2, '.', '');
+                $item['total'] = number_format($totalReal, 2, '.', '');
+            
+                return $item;
+            })->sortBy(function ($item) {
+                $item = (array) $item;
+                $prioridadTributo = $item['cod_tributo'] === '0000000273' ? 0 : 1;
+            
+                return sprintf('%d-%04d-%02d', $prioridadTributo, $item['anio'], $item['periodo']);
+            })
+            ->values();
+
+            Log::info('Descuento aplicado');
 
             DB::commit();
 
             return response()->json([
                 'success' => 'Pago registrado correctamente', 
-                'data' => $data, 
+                'data' => $dataFormateada, 
+                'registrosActualizados' => $registrosActualizados,
                 'codCheckout' => $codigo_operacion,
                 'amount'    => $monto,
                 'nro_operacion' => $codigo_operacion,

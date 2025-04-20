@@ -421,18 +421,23 @@ async function procesarSeleccion(){
                 html += "<tr>";
                 html += "<td class='white-space'>" + tributodetalle + "</td>";
                 html += "<td>" + tributo.anio + "</td>";
-                html += "<td>" + tributo.cod_pred + "</td>";
-                html += "<td class='text-end'>" + number_format(tributo.total ?? 0,2) + "</td>";
-                html += "<td class='text-end'>" + number_format(0,2) + "</td>";
-                html += "<td class='text-end'>" + number_format(tributo.total,2) + "</td>";
+                html += "<td>" + tributo.periodo + "</td>";
+                html += "<td class='text-end'>" + number_format(tributo.sub_total ?? 0,2) + "</td>";
+                if(tributo.descuento > 0){
+                    html += "<td class='text-end text-success fw-bold'>" + number_format(tributo.descuento,2) + "</td>";
+                }else{
+                    html += "<td class='text-end text-danger'>" + number_format(tributo.descuento,2) + "</td>";
+                }
+                
+                html += "<td class='text-end fw-bold'>" + number_format(tributo.total,2) + "</td>";
                 html += "</tr>";
-                subtotal += parseFloat(tributo.total);
-                total += parseFloat(tributo.total);
-                total_descuento += parseFloat(0);
+                subtotal += parseFloat(tributo.sub_total);
+                total += parseFloat(tributo.total) - parseFloat(tributo.descuento);
+                total_descuento += parseFloat(tributo.descuento);
             });
             
             $(".MontoSeleccionado").html(`<h4 class="text-danger font-15">SubTotal: S/ ${number_format(subtotal,2)}</h4>
-                <h4 class="text-success font-13">Dscto: S/ ${number_format(total_descuento,2)}</h4><hr>
+                <h4 class="text-success font-13 fw-bold">Dscto: S/ ${number_format(total_descuento,2)}</h4><hr>
                 <h4 class="text-blue fw-bold">Total a pagar S/. ${number_format(total,2)}</h4>`);
 
             $("#tablaProcesar tbody").html(html);

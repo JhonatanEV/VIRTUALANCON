@@ -1,5 +1,7 @@
 <?php
 namespace App\Http\Controllers\pagalo\Repositories;
+
+use App\Http\Controllers\pagalo\Models\RegistroPago;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Pagalo\Resources\CuentaResource;
 use Illuminate\Http\Request;
@@ -23,8 +25,12 @@ class EstadoCuentaRespository
     {
         $CODIGO_OPERACION = date('YmdHis') . rand(1000, 9999);
         try {
-            $query_detalle = DB::select("
 
+            RegistroPago::whereNull('pushernumber')
+            ->where('cidpers', $codigo)
+            ->delete();
+
+            $query_detalle = DB::select("
                     INSERT INTO virtual.\"REGISTRO_PAGO\"(CIDPERS, CIDPRED, CTIPING, CTIPREC, CPERANIO, CPERIOD, IDSIGMA, IMP_INSOL, COSTO_EMIS, DFECVEN, REAJUSTE, FACTOR_MORA_D, MORA_D,DESCUENTO, CODIGO_OPERACION)                        
                         SELECT 
                             a.cidpers,
@@ -87,7 +93,7 @@ class EstadoCuentaRespository
                                     rp.dfecven,
                                     rp.codigo_operacion
                                 HAVING SUM(rp.imp_insol + rp.costo_emis) > 0
-                                ORDER BY m.vobserv, rp.cperanio, rp.cperiod
+                                ORDER BY rp.ctiping, rp.cperanio desc, rp.cperiod
                                 ", ['cidpers' => $codigo, 'codigo_operacion' => $CODIGO_OPERACION]);
         
             return $query;
