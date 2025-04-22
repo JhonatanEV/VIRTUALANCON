@@ -39,10 +39,8 @@ class PdfReciboServices
             ->whereIn('ctiprec', ['0000002120','0000002126'])
             ->sum('imp_insol');
 
-            $detalles_sin_descuento = $detalles_recibo->reject(function ($item) {
-                return in_array($item->ctiprec, ['0000002126', '0000002120']);
-            });
-
+            $detalles_sin_descuento = $detalles_recibo->whereNotIn('ctiprec', ['0000002120','0000002126']);
+            
         } catch (\Exception $e) {
             return response()->json(array('error' => $e->getMessage()), 500);
         }
@@ -104,8 +102,8 @@ class PdfReciboServices
         #FIN LADO DERECHO
         $fpdf->Ln(8);
         $header = array('PERIODO', 'RECIBO', 'FECHA VENC.', 'MONTO', 'GASTOS', 'MORAS', 'COSTAS', 'TOTAL');
-        $aligns = array('C', 'C', 'C', 'R', 'R', 'R', 'R', 'R', 'R');
-        $headerWidth = array(20, 15, 25, 20, 20, 20, 20, 30);
+        $aligns = array('C', 'C', 'C', 'R', 'R', 'R', 'R', 'R');
+        $headerWidth = array(20, 25, 25, 25, 25, 25, 20, 30);
         
         $fpdf->SetX(5);
         $fpdf->SetFont('Arial', 'B', 9);
@@ -120,6 +118,7 @@ class PdfReciboServices
         $total_pagado = 0;
         $anexo_group = null;
         $anexo = null;
+        
         foreach ($detalles_sin_descuento as $detalle) {
             #$tipo_deuda = $detalle->ecuenta->mconten->vdescri;
             
@@ -129,8 +128,6 @@ class PdfReciboServices
             } else {
                 $anexo = 'ANEXO: '.$detalle->ecuenta->cidpred.' - '.$detalle->ecuenta->mconten->vdescri;
             }
-
-
 
             if ($anexo_group !== $anexo) {
                 $anexo_group = $anexo;                
@@ -142,7 +139,8 @@ class PdfReciboServices
             }
             $beneficio = 0;
 
-            $total = $detalle->imp_insol+$detalle->costo_emis+$detalle->imp_mora-$beneficio;
+            $total = ($detalle->imp_insol+$detalle->costo_emis+$detalle->imp_mora)-$beneficio;
+            
             $fpdf->SetX(5);
             $fpdf->Cell($headerWidth[0], 4, trim($detalle->ecuenta->cperiod). '-' .$detalle->ecuenta->cperanio, 1, 0, 'C');
             $fpdf->Cell($headerWidth[1], 4, $detalle->idsigma, 1, 0, 'C');
@@ -153,7 +151,7 @@ class PdfReciboServices
             $fpdf->Cell($headerWidth[5], 4, number_format($detalle->imp_mora,2), 1, 0, 'R');
             $fpdf->Cell($headerWidth[6], 4, number_format(0,2), 1, 0, 'R');
             #$fpdf->Cell($headerWidth[7], 4, number_format($beneficio,2), 1, 0, 'R');
-            $fpdf->Cell($headerWidth[8], 4, number_format($total,2), 1, 0, 'R');
+            $fpdf->Cell($headerWidth[7], 4, number_format($total,2), 1, 0, 'R');
             $fpdf->Ln();
             $total_pagado += $total;
 
@@ -162,15 +160,18 @@ class PdfReciboServices
         $fpdf->Ln(4);
         $fpdf->SetX(5);
         $fpdf->SetFont('Arial', 'B', 12);
-        $fpdf->Cell(190, 6, 'TOTAL CANCELADO: S/. '.number_format($total_pagado,2), 'BT', 1, 'C');
+        $fpdf->Cell(190, 6, 'SUB TOTAL: S/. '.number_format($total_pagado,2), 'BT', 1, 'C');
         #$descuento
         $fpdf->Ln(4);
         $fpdf->SetX(5);
         $fpdf->SetFont('Arial', 'B', 12);
         $fpdf->Cell(190, 6, 'DESCUENTO: S/. '.number_format($descuento,2), 'BT', 1, 'C');
 
-
-
+        #TOTAL  CANCELADO
+        $fpdf->Ln(4);
+        $fpdf->SetX(5);
+        $fpdf->SetFont('Arial', 'B', 12);
+        $fpdf->Cell(190, 6, 'TOTAL CANCELADO: S/. '.number_format($total_pagado-$descuento,2), 'BT', 1, 'C');
 
         $fpdf->Ln(4);
         $fpdf->SetX(5);
