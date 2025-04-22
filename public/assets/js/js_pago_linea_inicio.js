@@ -432,7 +432,7 @@ async function procesarSeleccion(){
                 html += "<td class='text-end fw-bold'>" + number_format(tributo.total,2) + "</td>";
                 html += "</tr>";
                 subtotal += parseFloat(tributo.sub_total);
-                total += parseFloat(tributo.total) - parseFloat(tributo.descuento);
+                total += parseFloat(tributo.sub_total) - parseFloat(tributo.descuento);
                 total_descuento += parseFloat(tributo.descuento);
             });
             

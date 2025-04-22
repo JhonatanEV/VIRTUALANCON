@@ -150,7 +150,10 @@ class PagosEnLineaController extends Controller
                 return sprintf('%d-%04d-%02d', $prioridadTributo, $item['anio'], $item['periodo']);
             })
             ->values();
-
+            $monto_total_menos_descuento = 0;
+            foreach ($dataFormateada as $item) {
+                $monto_total_menos_descuento += floatval($item['total']);
+            }
             Log::info('Descuento aplicado');
 
             DB::commit();
@@ -160,7 +163,7 @@ class PagosEnLineaController extends Controller
                 'data' => $dataFormateada, 
                 'registrosActualizados' => $registrosActualizados,
                 'codCheckout' => $codigo_operacion,
-                'amount'    => $monto,
+                'amount'    => $monto_total_menos_descuento,
                 'nro_operacion' => $codigo_operacion,
                 'purchasenumber'=> $purchaseNumber,
                 'code' => 200
@@ -430,9 +433,9 @@ class PagosEnLineaController extends Controller
             /*$v_estoriginal = collect($registrosPago)
             ->first(fn($r) => $r->nestado === 'I' && $r->cidcont === '0000007285')
             ->vdescri ?? '0';*/
-
+            $ultimoRegistro = null;
             foreach ($registrosPago as $registro) {
-
+                $ultimoRegistro = $registro;
                 /*$cuenta = EstadoCuenta::where('idsigma', $registro->idsigma)
                     ->where('cidpers', $codigo)
                     ->first();
@@ -522,6 +525,61 @@ class PagosEnLineaController extends Controller
             }
 
             Log::info('Fin tabla mtesoreria');
+
+            /*
+                INSERTAMOS AMNISTIA, COMO UNA FILA
+            */
+            $descuentosPorTipo = $registrosPago
+            ->groupBy('ctiping')
+            ->map(function ($grupo) {
+                return round($grupo->sum('descuento'), 2);
+            })
+            ->filter(function ($descuentoTotal) {
+                return $descuentoTotal > 0;
+            });
+
+            foreach ($descuentosPorTipo as $ctiping => $descuentoTotal) {
+                $nuevoIdsigmaInt += 1;
+                $nuevoIdsigma = str_pad($nuevoIdsigmaInt, 10, '0', STR_PAD_LEFT);
+            
+                $descuentoMtesoreria = new Mtesoreria();
+                $descuentoMtesoreria->idsigma = $nuevoIdsigma;
+                $descuentoMtesoreria->cidecta = $ultimoRegistro->idsigma;
+                $descuentoMtesoreria->cnumcom = $nroRecibo;
+                $descuentoMtesoreria->nmontot = $descuentoTotal;
+                $descuentoMtesoreria->dfecpag = $fecha_pago;
+                $descuentoMtesoreria->nestado = '1';
+                $descuentoMtesoreria->vusernm = $nroCaja;
+                $descuentoMtesoreria->vhostnm = $ipCliente;
+                $descuentoMtesoreria->ddatetm = $fecha_pago;
+                $descuentoMtesoreria->cidpers = $codigo;
+                $descuentoMtesoreria->cidpred = $ultimoRegistro->cidpred;
+                $descuentoMtesoreria->cperanio = $ultimoRegistro->cperanio;
+                $descuentoMtesoreria->cperiod = $ultimoRegistro->cperiod;
+                $descuentoMtesoreria->ncantid = 1;
+                $descuentoMtesoreria->imp_insol = $descuentoTotal;
+                $descuentoMtesoreria->fact_reaj = 0;
+                $descuentoMtesoreria->imp_reaj = 0;
+                $descuentoMtesoreria->fact_mora = 0;
+                $descuentoMtesoreria->imp_mora = 0;
+                $descuentoMtesoreria->costo_emis = 0;
+                $descuentoMtesoreria->vobserv = $purchaseNumber;
+                $descuentoMtesoreria->ctippag = '1000001864';
+                $descuentoMtesoreria->cnroope = $purchaseNumber;
+                $descuentoMtesoreria->cidapertura = $codigo_apertura_caja;
+                $descuentoMtesoreria->cnumope = $cnumope;
+            
+                // Set ctiprec según tipo
+                if ($ctiping === '0000000273') {
+                    $descuentoMtesoreria->ctiprec = '0000002126'; // Predial
+                } elseif ($ctiping === '0000000278') {
+                    $descuentoMtesoreria->ctiprec = '0000002120'; // Arbitrios
+                }
+            
+                $descuentoMtesoreria->save();
+            }
+
+            #FIN AMNISTIA
 
             // Eliminar registros temporales de RegistroPago
             RegistroPago::where('codigo_operacion', $codigo_operacion)
