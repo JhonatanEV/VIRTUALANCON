@@ -29,21 +29,22 @@ class VisaService
         curl_close($curl);
         return $response;
     }
-    function generateSesion($amount, $token, $parametros=[]) {
+    function generateSesion($amount, $token, $parametros=[], $dataMap=[]) {
         $session = array(
+            'channel' => 'web',
             'amount' => $amount,
             'antifraud' => array(
                 'clientIp' => $_SERVER['REMOTE_ADDR'],
                 'merchantDefineData' => $parametros,
             ),
-            'channel' => 'web',
+            'dataMap' => $dataMap,
         );
         $json = json_encode($session);
         $response = json_decode($this->postRequest($this->visaCredentials['url_session'], $json, $token));
         return $response->sessionKey;
     }
 
-    function generateAuthorization($amount, $purchaseNumber, $transactionToken, $token) {
+    function generateAuthorization($amount, $purchaseNumber, $transactionToken, $token, $parametros=[]) {
         $data = array(
             'antifraud' => null,
             'captureType' => 'manual',
@@ -55,6 +56,7 @@ class VisaService
                 'purchaseNumber' => $purchaseNumber,
                 'tokenId' => $transactionToken
             ),
+            'dataMap' => $parametros,
             'recurrence' => null,
             'sponsored' => null
         );

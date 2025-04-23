@@ -9,8 +9,8 @@
     "license": "MIT",
     "require": {
         "php": "^7.2.5|^8.0",
-        "codedge/laravel-fpdf": "^1.9",
         "awobaz/compoships": "^2.1",
+        "codedge/laravel-fpdf": "^1.9",
         "dompdf/dompdf": "^2.0",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",
@@ -20,6 +20,7 @@
         "laravel/tinker": "^2.5",
         "phpoffice/phpspreadsheet": "^1.28",
         "simplesoftwareio/simple-qrcode": "^2.0",
+        "stevebauman/location": "^6.6",
         "sunra/php-simple-html-dom-parser": "^1.5"
     },
     "require-dev": {

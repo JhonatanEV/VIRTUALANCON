@@ -24,6 +24,7 @@ use App\Http\Controllers\pagalo\Models\AperturaCaja;
 use App\Traits\UtilsTrait;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Stevebauman\Location\Facades\Location;
 
 class PagosEnLineaController extends Controller
 {   
@@ -123,17 +124,11 @@ class PagosEnLineaController extends Controller
                 $item = (array) $item;
             
                 $idsigmaArray = explode(',', $item['idsigma_agrupados']);
-            
-                // Buscar todos los registros correspondientes a ese ítem
                 $registros = $registrosActualizados->filter(function ($r) use ($idsigmaArray, $item) {
                     return in_array($r->idsigma, $idsigmaArray) &&
                         $r->codigo_operacion === $item['codigo_operacion'];
                 });
-            
-                // Sumar descuentos y recalcular total
                 $descuentoTotal = $registros->sum('descuento');
-            
-                // Total real = suma de todos los campos menos descuento
                 $totalReal = $registros->sum(function ($r) {
                     return $r->imp_insol + $r->costo_emis + $r->reajuste + $r->mora_d;
                 }) - $descuentoTotal;
@@ -185,37 +180,16 @@ class PagosEnLineaController extends Controller
         $total = (float)number_format($total, 2, '.', '');
 
         try {            
-            
-            /*$params = [
-                'codigo' => $codigo,
-                'contribuyente' => '',
-                'transactionData' => [
-                    'AMOUNT' => $total,
-                    'TRANSACTION_DATE' => Carbon::now()->format('Y-m-d H:i:s'),
-                    'ACTION_CODE' => '000',
-                    'STATUS' => 'APROBADO',
-                    'TRANSACTION_ID' => '00000000000000000000',
-                    'NRO_PEDIDO' => '00000000000000000000'
-                ],
-                'codigo_operacion' => $FACODCHECKOUT,
-                'purchaseNumber' => $purchaseNumber,
-                //'json' => json_encode(json_decode($NiubizResponse->JSON_PROCESO))
-            ];
-            try {
-                    $reciboResponse = $this->generarPago($params);
-                    
-                    Log::info('reciboResponse: '.json_encode($reciboResponse));
-
-            } catch (\Throwable $th) {
-                Log::error('Error al generar recibo 1: '.$th->getMessage());
-            }
-            
-            return response()->json(['mensaje' => 'Pago registrado correctamente', 'data' => [], 'code' => 200], 200);*/
-            
-            #*************************************** FIN PRUEBA ***************************************
-
             $token = $this->visaServiceOnline->generateToken();
-            
+            $position = Location::get();
+            $dataMap = [
+                'cardholderCity' => $position->cityName ?? 'Lima',
+                'cardholderCountry' => $position->countryCode ?? 'PE',
+                'cardholderAddress' => Session::get('SESS_PERS_DIRECCION'),
+                'cardholderPostalCode' => $position->postalCode ?? '15123',
+                'cardholderState' => $position->regionName ?? 'LIM',
+                'cardholderPhoneNumber' => Session::get('SESS_PERS_CELULAR'),
+            ];
             $sesion = $this->visaServiceOnline->generateSesion($total, $token, 
             [
                 'MDD4'  =>  Session::get('SESS_PERS_CORREO'),
@@ -223,7 +197,7 @@ class PagosEnLineaController extends Controller
                 'MDD32' =>  Session::get('SESS_PERS_DOCUMENTO'),
                 'MDD75' =>  'Registrado',
                 'MDD77' =>  intval(Session::get('SESS_DIAS'))
-            ]);
+            ],$dataMap);
             
             return response()->json([
                 'mensaje' => 'Pago registrado correctamente', 
@@ -257,7 +231,16 @@ class PagosEnLineaController extends Controller
         
         try {
             $token = $this->visaServiceOnline->generateToken();
-            $data = $this->visaServiceOnline->generateAuthorization($amount, $purchasenumber, $transactionToken, $token);
+            $position = Location::get();
+            $dataMap = [
+                'urlAddress' => request()->getHost(),
+                'partnerIdCode' => '',
+                'serviceLocationCityName' => $position->cityName ?? 'Lima',
+                'serviceLocationCountrySubdivisionCode' => $position->regionName ?? 'LIM',
+                'serviceLocationCountryCode' => $position->countryCode ?? 'PE',
+                'serviceLocationPostalCode' => $position->postalCode ?? '15123',
+            ];
+            $data = $this->visaServiceOnline->generateAuthorization($amount, $purchasenumber, $transactionToken, $token, $dataMap);
 
             if(empty($data)){
                 $page_data['page_directory'] = 'pagalo.pago_linea';
@@ -268,7 +251,9 @@ class PagosEnLineaController extends Controller
                 return view('index',$page_data);
             }
             if (isset($data->dataMap)):
-                $ACTION_CODE = $data->dataMap->ACTION_CODE; #: "000",
+                #$ACTION_CODE = $data->dataMap->ACTION_CODE; #: "000",
+                $ACTION_CODE = $data->dataMap->STATUS; #Authorized
+
                 $codigo = Session::get('SESS_PERS_CONTR_CODIGO');
 
                 $transactionData = $this->visaServiceOnline->extractTransactionData($data);
@@ -282,7 +267,7 @@ class PagosEnLineaController extends Controller
                 $NiubizResponse->AMOUNT = floatval($transactionData['AMOUNT']) ?? 0;
                 $NiubizResponse->save();
 
-                if($ACTION_CODE=='000'):
+                if($ACTION_CODE=='Authorized'):
 
                     $contribuyente = Contribuyente::where('idsigma', $codigo)->first();
 
