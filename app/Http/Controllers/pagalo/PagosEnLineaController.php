@@ -181,7 +181,8 @@ class PagosEnLineaController extends Controller
 
         try {            
             $token = $this->visaServiceOnline->generateToken();
-            $position = Location::get();
+            $ipUsuario = request()->ip();
+            $position = Location::get($ipUsuario);
             $dataMap = [
                 'cardholderCity' => $position->cityName ?? 'Lima',
                 'cardholderCountry' => $position->countryCode ?? 'PE',
@@ -231,7 +232,8 @@ class PagosEnLineaController extends Controller
         
         try {
             $token = $this->visaServiceOnline->generateToken();
-            $position = Location::get();
+            $ipUsuario = request()->ip();
+            $position = Location::get($ipUsuario);
             $dataMap = [
                 'urlAddress' => request()->getHost(),
                 'partnerIdCode' => '',
