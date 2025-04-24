@@ -222,8 +222,8 @@
 </div>
 
 
-<!-- <script src="https://static-content.vnforapps.com/v2/js/checkout.js"></script> -->
-<script src="https://static-content-qas.vnforapps.com/v2/js/checkout.js?qa=true"></script>
+<script src="https://static-content.vnforapps.com/v2/js/checkout.js"></script>
+<!-- <script src="https://static-content-qas.vnforapps.com/v2/js/checkout.js?qa=true"></script> -->
 <script>
     $(document).ready(function() {
         let allaEcuenta = @json($allEcuenta);

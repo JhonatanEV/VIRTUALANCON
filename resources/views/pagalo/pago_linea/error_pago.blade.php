@@ -31,7 +31,7 @@ $data = json_decode($jsonData, true);
                             <b>Tarjeta: </b> {{ $data['CARD'] }} ({{ $data['BRAND'] }})
                         </div>
                         <div class="col-md-12">
-                            <b>Importe pagado: </b> {{ $data['AMOUNT'] }}
+                            <b>Importe pagado: </b>S/. {{ $data['AMOUNT'] }}
                         </div>
                     </div>                             
                 </div>            

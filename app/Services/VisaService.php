@@ -2,7 +2,6 @@
 namespace App\Services;
 use App\Helpers\NiubizHelper;
 use GuzzleHttp\Client;
-
 class VisaService
 {   
     protected $visaCredentials;
@@ -46,7 +45,6 @@ class VisaService
 
     function generateAuthorization($amount, $purchaseNumber, $transactionToken, $token, $parametros=[]) {
         $data = array(
-            'antifraud' => null,
             'captureType' => 'manual',
             'channel' => 'web',
             'countable' => true,
@@ -56,9 +54,7 @@ class VisaService
                 'purchaseNumber' => $purchaseNumber,
                 'tokenId' => $transactionToken
             ),
-            'dataMap' => $parametros,
-            'recurrence' => null,
-            'sponsored' => null
+            'dataMap' => $parametros
         );
         $json = json_encode($data);
         $session = json_decode($this->postRequest($this->visaCredentials['url_authorization'], $json, $token));

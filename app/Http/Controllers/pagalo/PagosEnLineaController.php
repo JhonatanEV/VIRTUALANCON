@@ -194,7 +194,6 @@ class PagosEnLineaController extends Controller
             $sesion = $this->visaServiceOnline->generateSesion($total, $token, 
             [
                 'MDD4'  =>  Session::get('SESS_PERS_CORREO'),
-                'MDD21' =>  0,
                 'MDD32' =>  Session::get('SESS_PERS_DOCUMENTO'),
                 'MDD75' =>  'Registrado',
                 'MDD77' =>  intval(Session::get('SESS_DIAS'))

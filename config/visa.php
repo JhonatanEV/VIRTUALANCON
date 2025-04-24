@@ -1,7 +1,6 @@
 <?php
 return [
     'development' => env('NIUBIZ_DEVELOPER', true),
-
     'credentials' => [
         'development' => [
             'merchant_id' => '522591303',
@@ -22,10 +21,5 @@ return [
             'url_authorization' => 'https://apiprod.vnforapps.com/api.authorization/v3/authorization/ecommerce/'.env('NIUBIZ_MERCHANT_ID'), #COD_COMERCIO
         ],
     ],
-
-    // 'current_credentials' => function () {
-    //     $environment = env('VISA_ENVIRONMENT') ? 'development' : 'production';
-    //     return config("visa.credentials.{$environment}");
-    // },
     
 ];
