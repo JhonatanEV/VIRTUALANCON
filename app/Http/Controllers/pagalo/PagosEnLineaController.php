@@ -183,12 +183,14 @@ class PagosEnLineaController extends Controller
             $token = $this->visaServiceOnline->generateToken();
             $ipUsuario = request()->ip();
             $position = Location::get($ipUsuario);
+            $ciudad = str_replace(' region', '', $position->cityName ?? 'Lima');
+            $ciudad = explode(' ', $position->cityName ?? 'Lima')[0];
             $dataMap = [
-                'cardholderCity' => $position->cityName ?? 'Lima',
+                'cardholderCity' => $ciudad,
                 'cardholderCountry' => $position->countryCode ?? 'PE',
                 'cardholderAddress' => Session::get('SESS_PERS_DIRECCION'),
                 'cardholderPostalCode' => $position->postalCode ?? '15123',
-                'cardholderState' => $position->regionName ?? 'LIM',
+                'cardholderState' => $position->regionCode ?? 'LMA',
                 'cardholderPhoneNumber' => Session::get('SESS_PERS_CELULAR'),
             ];
             $sesion = $this->visaServiceOnline->generateSesion($total, $token, 
@@ -196,7 +198,7 @@ class PagosEnLineaController extends Controller
                 'MDD4'  =>  Session::get('SESS_PERS_CORREO'),
                 'MDD32' =>  Session::get('SESS_PERS_DOCUMENTO'),
                 'MDD75' =>  'Registrado',
-                'MDD77' =>  intval(Session::get('SESS_DIAS'))
+                'MDD77' =>  intval(Session::get('SESS_DIAS')) ?? 1,
             ],$dataMap);
             
             return response()->json([
@@ -233,11 +235,12 @@ class PagosEnLineaController extends Controller
             $token = $this->visaServiceOnline->generateToken();
             $ipUsuario = request()->ip();
             $position = Location::get($ipUsuario);
+        
             $dataMap = [
                 'urlAddress' => request()->getHost(),
                 'partnerIdCode' => '',
                 'serviceLocationCityName' => $position->cityName ?? 'Lima',
-                'serviceLocationCountrySubdivisionCode' => $position->regionName ?? 'LIM',
+                'serviceLocationCountrySubdivisionCode' => $position->cityName ?? 'LIM',
                 'serviceLocationCountryCode' => $position->countryCode ?? 'PE',
                 'serviceLocationPostalCode' => $position->postalCode ?? '15123',
             ];
@@ -284,7 +287,7 @@ class PagosEnLineaController extends Controller
                         try {
                                 $reciboResponse = $this->generarPago($params);
                                 
-                                Log::info('reciboResponse: '.json_encode($reciboResponse));
+                                #Log::info('reciboResponse: '.json_encode($reciboResponse));
 
                                 $recibo = $reciboResponse->getData();
                                 $recibo = json_decode(json_encode($recibo), true);
@@ -334,7 +337,7 @@ class PagosEnLineaController extends Controller
                 if(isset($data->data)):
                     $dataJson = $data->data;
 
-                    Log::channel('pagoonlinea')->debug('Data Error Tarjeta: '.json_encode($dataJson));
+                    #Log::channel('pagoonlinea')->debug('Data Error Tarjeta: '.json_encode($dataJson));
 
                     $transactionData = $this->visaServiceOnline->extractTransactionFaild($data);
                     $NiubizResponse = NiubizResponse::where('PURCHASENUMBER',  $purchasenumber)->firstOrFail();
@@ -398,11 +401,11 @@ class PagosEnLineaController extends Controller
                 $nroRecibo = $resultado[0]->nro_recibo;
             }
 
-            Log::info('nroRecibo: '.$nroRecibo);
+            #Log::info('nroRecibo: '.$nroRecibo);
 
             #código de apertura de caja
             $codigo_apertura_caja = (new AperturaCaja())->codapeturacajero($nroCaja);
-            Log::info('codigo_apertura_caja: '.$codigo_apertura_caja);
+            #Log::info('codigo_apertura_caja: '.$codigo_apertura_caja);
 
             #máximo idsigma actual una vez (fuera del bucle)
             $ultimoIdsigma = DB::table('tesoreria.mtesore')
@@ -413,7 +416,7 @@ class PagosEnLineaController extends Controller
             #NRO OPERACION
             $nextVal = DB::select("SELECT nextval('tesoreria.sec_num_operacion') AS sec")[0]->sec;
             $cnumope = substr('0000000000' . $nextVal, -10);
-            Log::info('cnumope: '.$cnumope);
+            #Log::info('cnumope: '.$cnumope);
             $ipCliente = $this->getIpCliente();
 
             /*$v_estoriginal = collect($registrosPago)
@@ -473,7 +476,7 @@ class PagosEnLineaController extends Controller
                         'imp_mora' => $registro->mora_d
                     ]);
 
-                Log::info('Update en Estado Cuenta');
+                #Log::info('Update en Estado Cuenta');
 
                 $subtotal = $registro->imp_insol + $registro->reajuste + $registro->mora_d + $registro->costo_emis;
                 // Generar nuevo idsigma para mtesoreria
@@ -510,7 +513,7 @@ class PagosEnLineaController extends Controller
                 $mtesoreria->save();
             }
 
-            Log::info('Fin tabla mtesoreria');
+            #Log::info('Fin tabla mtesoreria');
 
             /*
                 INSERTAMOS AMNISTIA, COMO UNA FILA
@@ -573,7 +576,7 @@ class PagosEnLineaController extends Controller
                 ->where('cidpers', $codigo)
                 ->delete();
 
-            Log::info('Fin tabla RegistroPago');
+            #Log::info('Fin tabla RegistroPago');
 
             #Insertar cabecera en dtesoreria
             $dtesoreria = new Dtesoreria();
@@ -592,7 +595,7 @@ class PagosEnLineaController extends Controller
             $dtesoreria->ddatetm = $fecha_pago;
             $dtesoreria->save();
 
-            Log::info('Fin tabla dtesoreria');
+            #Log::info('Fin tabla dtesoreria');
 
             #Actualizas nro comprobante en series de cajero
             DB::table('tesoreria.mseries')
