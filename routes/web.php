@@ -17,7 +17,7 @@ use App\Http\Controllers\notificaciones\NotificacionesBandejaController;
 use App\Http\Controllers\Contribuyente\ContribuyenteController;
 use App\Http\Controllers\Seguridad\UsuariosController;
 
-Route::get('/', [LoginController::class, 'redirectToLogin'])->name('root');
+Route::get('/', [LoginController::class, 'redirectToLogin'])->name('login2');
 Route::get('inicio', [InicioController::class, 'redirectToInicio'])->name('inicio');
 
 // Rutas de autenticación

@@ -27,8 +27,7 @@ class LoginController extends Controller
 
 	public function redirectToLogin()
 	{
-		dd('redirectToLogin');
-		return redirect('login')->route('login');
+		return redirect('/login');
 	}
 
 	public function recuperarAcceso(){
